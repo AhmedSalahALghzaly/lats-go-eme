@@ -76,23 +76,16 @@ export default function ProductBrandsAdmin() {
       await productBrandsApi.create({
         name: name.trim(),
         name_ar: nameAr.trim(),
-        logo: logoImage || logoUrl.trim() || null,
+        logo: logoImage || null,
         country_of_origin: countryOfOrigin.trim() || null,
         country_of_origin_ar: countryOfOriginAr.trim() || null,
       });
 
-      setShowSuccess(true);
-      setName('');
-      setNameAr('');
-      setCountryOfOrigin('');
-      setCountryOfOriginAr('');
-      setLogoImage(null);
-      setLogoUrl('');
+      showToast(language === 'ar' ? 'تم إضافة الماركة بنجاح' : 'Brand created successfully', 'success');
+      resetForm();
       fetchBrands();
-
-      setTimeout(() => setShowSuccess(false), 2000);
     } catch (error: any) {
-      setError(error.response?.data?.detail || 'Error saving brand');
+      showToast(language === 'ar' ? 'فشل في حفظ الماركة' : 'Failed to save brand', 'error');
     } finally {
       setSaving(false);
     }
