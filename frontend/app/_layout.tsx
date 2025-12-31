@@ -14,15 +14,24 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const hasHydrated = useHasHydrated();
   const user = useAppStore((state) => state.user);
   const currentMood = useAppStore((state) => state.currentMood);
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+
+  // Wait for navigation to be ready
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsNavigationReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
-    // Don't do anything until hydration is complete
-    if (!hasHydrated) {
-      console.log('Auth Guard: Waiting for hydration...');
+    // Don't do anything until hydration is complete and navigation is ready
+    if (!hasHydrated || !isNavigationReady) {
+      console.log('Auth Guard: Waiting...', { hasHydrated, isNavigationReady });
       return;
     }
 
-    console.log('Auth Guard: Hydrated, checking auth...', { isAuthenticated, user: user?.email, segments });
+    console.log('Auth Guard: Checking auth...', { isAuthenticated, user: user?.email, segments });
 
     const inAuthGroup = segments[0] === 'login';
     const inProtectedRoute = segments[0] === 'admin' || segments[0] === 'owner' || 
@@ -32,14 +41,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     // If user is authenticated and on login page, redirect to home
     if (isAuthenticated && inAuthGroup) {
       console.log('Auth Guard: User authenticated, redirecting from login to home');
-      router.replace('/(tabs)');
+      setTimeout(() => router.replace('/(tabs)'), 50);
     }
     // If user is not authenticated and trying to access protected routes
     else if (!isAuthenticated && inProtectedRoute) {
       console.log('Auth Guard: User not authenticated, redirecting to login');
-      router.replace('/login');
+      setTimeout(() => router.replace('/login'), 50);
     }
-  }, [isAuthenticated, hasHydrated, segments, user]);
+  }, [isAuthenticated, hasHydrated, segments, user, isNavigationReady]);
 
   // Show loading screen while hydrating
   if (!hasHydrated) {
