@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../src/hooks/useTheme';
 import { useTranslation } from '../src/hooks/useTranslation';
-import { useAppStore } from '../src/store/appStore';
+import { useAppStore, useHasHydrated } from '../src/store/appStore';
 import { authApi } from '../src/services/api';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -24,17 +24,23 @@ export default function LoginScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setUser, setSessionToken, user } = useAppStore();
+  const hasHydrated = useHasHydrated();
+  
+  // Get store actions directly from store for atomic updates
+  const setUser = useAppStore((state) => state.setUser);
+  const setSessionToken = useAppStore((state) => state.setSessionToken);
+  const setUserRole = useAppStore((state) => state.setUserRole);
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
 
   const [loading, setLoading] = useState(false);
   const [processingAuth, setProcessingAuth] = useState(false);
 
-  // Check if already logged in
+  // Reactive navigation - auto-redirect when authenticated
   useEffect(() => {
-    if (user) {
+    if (hasHydrated && isAuthenticated) {
       router.replace('/(tabs)');
     }
-  }, [user]);
+  }, [isAuthenticated, hasHydrated]);
 
   // Handle initial URL (cold start)
   useEffect(() => {
@@ -83,9 +89,14 @@ export default function LoginScreen() {
       const response = await authApi.exchangeSession(sessionId);
       const { user: userData, session_token } = response.data;
       
-      setUser(userData);
-      setSessionToken(session_token);
+      // ATOMIC UPDATE: Set all auth state in one go
+      // This triggers the reactive auth guard to navigate
+      setUser(userData, session_token);
+      if (userData.role) {
+        setUserRole(userData.role);
+      }
       
+      // Immediate navigation after atomic update
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Auth error:', error);
@@ -121,7 +132,8 @@ export default function LoginScreen() {
     }
   };
 
-  if (processingAuth) {
+  // Show loading while processing auth or before hydration
+  if (processingAuth || (!hasHydrated)) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
