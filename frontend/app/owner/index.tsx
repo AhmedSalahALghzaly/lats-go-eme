@@ -1,6 +1,6 @@
 /**
  * Owner Interface Dashboard
- * The advanced owner interface with icon grid and live metrics
+ * The advanced owner interface with icon grid and live metrics with deep-linking
  */
 import React, { useEffect, useState } from 'react';
 import {
@@ -17,8 +17,10 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useAppStore, useColorMood } from '../../src/store/appStore';
 import { SyncIndicator } from '../../src/components/ui/SyncIndicator';
+import { useWebSocket } from '../../src/services/websocketService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -43,6 +45,10 @@ export default function OwnerDashboard() {
   const orders = useAppStore((state) => state.orders);
   const customers = useAppStore((state) => state.customers);
   const products = useAppStore((state) => state.products);
+  const setOrderFilter = useAppStore((state) => state.setOrderFilter);
+
+  // Connect WebSocket for real-time updates
+  useWebSocket();
 
   // Calculate live metrics from store
   const metrics = {
@@ -54,13 +60,45 @@ export default function OwnerDashboard() {
     totalRevenue: orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0),
     activeCustomers: customers.length,
     totalProducts: products.length,
-    lowStock: products.filter((p: any) => (p.quantity || 0) < 10).length,
+    lowStock: products.filter((p: any) => (p.quantity || p.stock_quantity || 0) < 10).length,
   };
 
   const isRTL = language === 'ar';
 
   const handleIconPress = (route: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(route as any);
+  };
+
+  // Handle metric press - deep link to filtered orders
+  const handleMetricPress = (metricType: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    switch (metricType) {
+      case 'todayOrders':
+        setOrderFilter?.({ type: 'today' });
+        router.push('/owner/orders?filter=today' as any);
+        break;
+      case 'pendingOrders':
+        setOrderFilter?.({ status: 'pending' });
+        router.push('/owner/orders?filter=pending' as any);
+        break;
+      case 'totalRevenue':
+        router.push('/owner/analytics' as any);
+        break;
+      case 'activeCustomers':
+        router.push('/owner/customers' as any);
+        break;
+      case 'totalProducts':
+        router.push('/admin/products' as any);
+        break;
+      case 'lowStock':
+        setOrderFilter?.({ type: 'lowStock' });
+        router.push('/admin/products?filter=lowstock' as any);
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -132,10 +170,13 @@ export default function OwnerDashboard() {
           </View>
         </View>
 
-        {/* Live Metrics Panel */}
+        {/* Live Metrics Panel - Clickable */}
         <View style={styles.metricsContainer}>
           <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
             {language === 'ar' ? 'المقاييس الحية' : 'Live Metrics'}
+          </Text>
+          <Text style={[styles.sectionSubtitle, isRTL && styles.textRTL]}>
+            {language === 'ar' ? 'اضغط للتفاصيل' : 'Tap for details'}
           </Text>
 
           <View style={styles.metricsGrid}>
@@ -144,37 +185,85 @@ export default function OwnerDashboard() {
               label={language === 'ar' ? 'طلبات اليوم' : 'Today Orders'}
               value={metrics.todayOrders}
               color="#3B82F6"
+              onPress={() => handleMetricPress('todayOrders')}
             />
             <MetricCard
               icon="time"
               label={language === 'ar' ? 'قيد الانتظار' : 'Pending'}
               value={metrics.pendingOrders}
               color="#F59E0B"
+              pulse={metrics.pendingOrders > 0}
+              onPress={() => handleMetricPress('pendingOrders')}
             />
             <MetricCard
               icon="cash"
               label={language === 'ar' ? 'الإيرادات' : 'Revenue'}
               value={`${(metrics.totalRevenue / 1000).toFixed(1)}K`}
               color="#10B981"
+              onPress={() => handleMetricPress('totalRevenue')}
             />
             <MetricCard
               icon="people"
               label={language === 'ar' ? 'العملاء' : 'Customers'}
               value={metrics.activeCustomers}
               color="#8B5CF6"
+              onPress={() => handleMetricPress('activeCustomers')}
             />
             <MetricCard
               icon="cube"
               label={language === 'ar' ? 'المنتجات' : 'Products'}
               value={metrics.totalProducts}
               color="#EC4899"
+              onPress={() => handleMetricPress('totalProducts')}
             />
             <MetricCard
               icon="alert"
               label={language === 'ar' ? 'مخزون منخفض' : 'Low Stock'}
               value={metrics.lowStock}
               color="#EF4444"
+              pulse={metrics.lowStock > 0}
+              onPress={() => handleMetricPress('lowStock')}
             />
+          </View>
+        </View>
+
+        {/* Quick Stats */}
+        <View style={styles.quickStatsContainer}>
+          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+            {language === 'ar' ? 'إحصائيات سريعة' : 'Quick Stats'}
+          </Text>
+          
+          <View style={styles.quickStatsRow}>
+            <View style={styles.quickStatCard}>
+              <BlurView intensity={15} tint="light" style={styles.quickStatBlur}>
+                <Text style={styles.quickStatValue}>
+                  {orders.filter((o: any) => o.status === 'delivered').length}
+                </Text>
+                <Text style={styles.quickStatLabel}>
+                  {language === 'ar' ? 'تم التسليم' : 'Delivered'}
+                </Text>
+              </BlurView>
+            </View>
+            <View style={styles.quickStatCard}>
+              <BlurView intensity={15} tint="light" style={styles.quickStatBlur}>
+                <Text style={styles.quickStatValue}>
+                  {orders.filter((o: any) => o.status === 'shipped').length}
+                </Text>
+                <Text style={styles.quickStatLabel}>
+                  {language === 'ar' ? 'قيد الشحن' : 'Shipped'}
+                </Text>
+              </BlurView>
+            </View>
+            <View style={styles.quickStatCard}>
+              <BlurView intensity={15} tint="light" style={styles.quickStatBlur}>
+                <Text style={styles.quickStatValue}>
+                  {orders.filter((o: any) => o.status === 'cancelled').length}
+                </Text>
+                <Text style={styles.quickStatLabel}>
+                  {language === 'ar' ? 'ملغي' : 'Cancelled'}
+                </Text>
+              </BlurView>
+            </View>
           </View>
         </View>
 
@@ -185,25 +274,31 @@ export default function OwnerDashboard() {
   );
 }
 
-// Metric Card Component
+// Metric Card Component with Press Handler
 interface MetricCardProps {
   icon: string;
   label: string;
   value: number | string;
   color: string;
+  pulse?: boolean;
+  onPress?: () => void;
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, color }) => {
+const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, color, pulse, onPress }) => {
   return (
-    <View style={styles.metricCard}>
+    <TouchableOpacity style={styles.metricCard} onPress={onPress} activeOpacity={0.7}>
       <BlurView intensity={15} tint="light" style={styles.metricBlur}>
         <View style={[styles.metricIconContainer, { backgroundColor: color + '20' }]}>
           <Ionicons name={icon as any} size={20} color={color} />
+          {pulse && <View style={[styles.pulseDot, { backgroundColor: color }]} />}
         </View>
         <Text style={styles.metricValue}>{value}</Text>
         <Text style={styles.metricLabel}>{label}</Text>
+        <View style={styles.metricArrow}>
+          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.4)" />
+        </View>
       </BlurView>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -252,6 +347,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.5)',
     marginBottom: 16,
   },
   textRTL: {
@@ -264,6 +364,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginTop: 12,
   },
   iconCard: {
     width: (SCREEN_WIDTH - 56) / 4,
@@ -320,6 +421,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    position: 'relative',
+  },
+  pulseDot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   metricValue: {
     fontSize: 22,
@@ -330,6 +440,39 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
+    marginTop: 4,
+  },
+  metricArrow: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+  },
+  quickStatsContainer: {
+    marginTop: 32,
+  },
+  quickStatsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  quickStatCard: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  quickStatBlur: {
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  quickStatValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  quickStatLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
     marginTop: 4,
   },
 });
