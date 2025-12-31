@@ -25,6 +25,8 @@ export default function CarBrandsAdmin() {
   const [name, setName] = useState('');
   const [nameAr, setNameAr] = useState('');
   const [logoImage, setLogoImage] = useState<string>('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [editingBrand, setEditingBrand] = useState<any>(null);
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
