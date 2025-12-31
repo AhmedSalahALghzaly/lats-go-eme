@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, StatusBar, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,8 @@ import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAppStore } from '../store/appStore';
 import { SyncIndicator } from './ui/SyncIndicator';
+import { GlobalSearch } from './ui/GlobalSearch';
+import { NotificationCenter, NotificationBell } from './ui/NotificationCenter';
 
 // Logo image URL
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_carcomponents-3/artifacts/nipikb4p_1317.jpg';
