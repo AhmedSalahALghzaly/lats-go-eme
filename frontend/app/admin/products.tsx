@@ -470,18 +470,16 @@ export default function ProductsAdmin() {
             <Text style={[styles.sectionLabel, { color: colors.primary }]}>
               <Ionicons name="images" size={14} /> {language === 'ar' ? 'صور المنتج' : 'Product Images'}
             </Text>
-            <Text style={[styles.fieldHint, { color: colors.textSecondary }]}>
-              {language === 'ar' ? 'يمكنك إضافة صور متعددة للمنتج' : 'You can add multiple product images'}
-            </Text>
-
+            
             <ImageUploader
-              images={images}
-              onImagesChange={setImages}
+              mode="multiple"
+              value={images}
+              onChange={(newImages) => setImages(newImages as string[])}
               maxImages={5}
-              language={language}
+              size="medium"
+              label={language === 'ar' ? 'صور المنتج' : 'Product Images'}
+              hint={language === 'ar' ? 'يمكنك إضافة حتى 5 صور' : 'You can add up to 5 images'}
             />
-
- 
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
