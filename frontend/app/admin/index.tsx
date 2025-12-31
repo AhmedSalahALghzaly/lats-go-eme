@@ -78,7 +78,7 @@ export default function AdminPanel() {
           </View>
         </View>
 
-        <AdminPerformanceDashboard />
+        <AdminPerformanceDashboard compact />
 
         <View style={styles.sectionsContainer}>
           {ADMIN_SECTIONS.map((section) => (
