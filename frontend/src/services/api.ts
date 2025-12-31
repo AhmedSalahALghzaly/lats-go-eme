@@ -72,6 +72,7 @@ export const productApi = {
 export const cartApi = {
   get: () => api.get('/cart'),
   add: (productId: string, quantity: number) => api.post('/cart/add', { product_id: productId, quantity }),
+  addItem: (productId: string, quantity: number) => api.post('/cart/add', { product_id: productId, quantity }),
   update: (productId: string, quantity: number) => api.put('/cart/update', { product_id: productId, quantity }),
   clear: () => api.delete('/cart/clear'),
 };
