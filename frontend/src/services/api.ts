@@ -179,4 +179,18 @@ export const syncApi = {
     api.post('/sync/pull', { last_pulled_at: lastPulledAt, tables }),
 };
 
+// Legacy aliases for backwards compatibility
+export const categoriesApi = {
+  getAll: categoryApi.getAll,
+  getTree: categoryApi.getTree,
+  create: categoryApi.create,
+  delete: categoryApi.delete,
+};
+
+export const carBrandsApi = carBrandApi;
+export const carModelsApi = carModelApi;
+export const productBrandsApi = productBrandApi;
+export const productsApi = productApi;
+export const favoritesApi = favoriteApi;
+
 export default api;
