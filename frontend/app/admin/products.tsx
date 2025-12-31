@@ -46,7 +46,6 @@ export default function ProductsAdmin() {
 
   // Form state - Images (multiple)
   const [images, setImages] = useState<string[]>([]);
-  const [imageUrl, setImageUrl] = useState('');
 
   // Delete confirmation modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
