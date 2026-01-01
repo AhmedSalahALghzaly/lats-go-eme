@@ -1,6 +1,7 @@
 /**
  * Reusable Image Uploader Component
  * Modern 2025 UX with animations, drag feedback, and progress
+ * Opens device gallery/folders to select images
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -13,11 +14,12 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { useCloudUpload } from '../../hooks/useCloudUpload';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../hooks/useTranslation';
 
