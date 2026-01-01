@@ -617,6 +617,67 @@ export default function HomeScreen() {
         </View>
 
         {/* Bottom padding */}
+        <View style={{ height: 20 }} />
+
+        {/* 8. Promotional Banners Section - AT THE BOTTOM */}
+        {banners.length > 0 && (
+          <View style={styles.bannersSection}>
+            <View style={[styles.sectionHeader, isRTL && styles.sectionHeaderRTL]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                {language === 'ar' ? 'عروض خاصة' : 'Special Offers'}
+              </Text>
+            </View>
+            {banners.map((banner, index) => (
+              <TouchableOpacity
+                key={banner.id}
+                style={styles.bannerCard}
+                onPress={() => {
+                  if (banner.target_product_id) {
+                    router.push(`/product/${banner.target_product_id}`);
+                  } else if (banner.target_car_model_id) {
+                    router.push(`/car/${banner.target_car_model_id}`);
+                  }
+                }}
+                activeOpacity={0.9}
+              >
+                {banner.image ? (
+                  <Image
+                    source={{ uri: banner.image }}
+                    style={styles.bannerImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={['#3B82F6', '#8B5CF6']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.bannerGradient}
+                  >
+                    <Ionicons name="megaphone" size={40} color="rgba(255,255,255,0.3)" />
+                  </LinearGradient>
+                )}
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.bannerOverlay}
+                >
+                  <View style={styles.bannerContent}>
+                    <Text style={styles.bannerTitle}>
+                      {language === 'ar' ? (banner.title_ar || banner.title) : banner.title}
+                    </Text>
+                    <View style={styles.bannerBadge}>
+                      <Ionicons name="arrow-forward" size={14} color="#FFF" />
+                      <Text style={styles.bannerBadgeText}>
+                        {language === 'ar' ? 'اكتشف المزيد' : 'Learn More'}
+                      </Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Final Bottom padding */}
         <View style={{ height: 140 }} />
       </ScrollView>
       
