@@ -58,6 +58,17 @@ export default function SuppliersScreen() {
     linked_brands: [] as string[],
   });
 
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
   const fetchSuppliers = async () => {
     try {
       const res = await supplierApi.getAll();
