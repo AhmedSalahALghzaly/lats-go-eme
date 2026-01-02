@@ -17,7 +17,7 @@ import { useTranslation } from '../src/hooks/useTranslation';
 import { useAppStore, useHasHydrated } from '../src/store/appStore';
 import { authApi } from '../src/services/api';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://github-improvements.preview.emergentagent.com';
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function LoginScreen() {
   const { colors } = useTheme();
@@ -35,6 +35,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [processingAuth, setProcessingAuth] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Track component mount state
   useEffect(() => {
