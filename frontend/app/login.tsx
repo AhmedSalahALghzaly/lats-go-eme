@@ -135,9 +135,13 @@ export default function LoginScreen() {
   };
 
   const processSessionId = async (sessionId: string) => {
-    if (processingAuth) return; // Prevent duplicate processing
+    if (processingAuth) {
+      console.log('Already processing auth, skipping...');
+      return; // Prevent duplicate processing
+    }
     
     setProcessingAuth(true);
+    setAuthError(null);
     console.log('Processing session ID:', sessionId);
     
     try {
@@ -148,11 +152,12 @@ export default function LoginScreen() {
       
       if (!userData || !session_token) {
         console.error('Invalid auth response - missing user or token');
+        setAuthError('Invalid authentication response');
         setProcessingAuth(false);
         return;
       }
       
-      console.log('Auth successful, setting user data...');
+      console.log('Auth successful, setting user data:', userData.email);
       
       // ATOMIC UPDATE: Set all auth state in one go
       setUser(userData, session_token);
@@ -160,17 +165,19 @@ export default function LoginScreen() {
         setUserRole(userData.role);
       }
       
-      console.log('User set, navigating to home...');
+      console.log('User set successfully, navigating to home...');
       
       // Force navigation to home page after successful login
       setTimeout(() => {
-        console.log('Forcing navigation to tabs...');
-        router.replace('/(tabs)');
+        console.log('Navigating to tabs...');
         setProcessingAuth(false);
-      }, 300);
+        router.replace('/(tabs)');
+      }, 500);
       
     } catch (error: any) {
       console.error('Auth error:', error?.response?.data || error?.message || error);
+      const errorMessage = error?.response?.data?.detail || error?.message || 'Authentication failed';
+      setAuthError(errorMessage);
       setProcessingAuth(false);
     }
   };
