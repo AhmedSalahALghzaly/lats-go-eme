@@ -364,6 +364,18 @@ frontend:
         agent: "main"
         comment: "Metric cards grid, Smart Info Tags, recent orders, compact mode for admin index"
 
+  - task: "Enhanced Checkout with Server-Side Pricing"
+    implemented: true
+    working: true
+    file: "frontend/app/checkout.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Updated checkout to use server-side cart pricing. Shows original price (strikethrough), final discounted price, savings breakdown in Review and Confirm steps. Footer shows total savings."
+
 metadata:
   created_by: "main_agent"
   version: "2.0"
