@@ -243,6 +243,36 @@ export default function ProfileScreen() {
               </View>
             </TouchableOpacity>
           )}
+
+          {/* Admin Dashboard Access - For admins (not owners/partners) */}
+          {isAdmin && !canAccessOwner && (
+            <TouchableOpacity
+              style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/admin')}
+            >
+              <View style={styles.menuLeft}>
+                <LinearGradient
+                  colors={['#10B981', '#059669', '#047857']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.menuIcon, { borderRadius: 11 }]}
+                >
+                  <Ionicons name="settings" size={20} color="#FFF" />
+                </LinearGradient>
+                <View>
+                  <Text style={[styles.menuText, { color: colors.text }]}>
+                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#10B981', marginTop: 2 }}>
+                    {language === 'ar' ? 'مدير' : 'Admin'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.ownerBadge}>
+                <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Settings Section */}
