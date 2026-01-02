@@ -453,10 +453,29 @@ export default function CheckoutScreen() {
     ? ['المراجعة', 'التوصيل', 'التأكيد']
     : ['Review', 'Shipping', 'Confirm'];
 
+  // Calculate total using server-side cart pricing (final_unit_price)
   const getTotal = useCallback(() => {
-    return cartItems.reduce((sum, item) => {
-      const price = item.discountedPrice || item.product?.price || 0;
+    return cartItems.reduce((sum, item: any) => {
+      // Use server-side pricing: final_unit_price first, fallback to legacy fields
+      const price = item.final_unit_price || item.discountedPrice || item.product?.price || 0;
       return sum + price * item.quantity;
+    }, 0);
+  }, [cartItems]);
+
+  // Calculate original total (before any discounts)
+  const getOriginalTotal = useCallback(() => {
+    return cartItems.reduce((sum, item: any) => {
+      const price = item.original_unit_price || item.product?.price || 0;
+      return sum + price * item.quantity;
+    }, 0);
+  }, [cartItems]);
+
+  // Calculate total savings from discounts
+  const getTotalSavings = useCallback(() => {
+    return cartItems.reduce((sum, item: any) => {
+      const originalPrice = item.original_unit_price || item.product?.price || 0;
+      const finalPrice = item.final_unit_price || item.discountedPrice || item.product?.price || 0;
+      return sum + (originalPrice - finalPrice) * item.quantity;
     }, 0);
   }, [cartItems]);
 
