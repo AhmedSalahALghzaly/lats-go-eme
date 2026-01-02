@@ -1,15 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTranslation } from '../../src/hooks/useTranslation';
-import { useAppStore } from '../../src/store/appStore';
+import { useAppStore, useCanAccessAdminPanel, NEON_NIGHT_THEME } from '../../src/store/appStore';
 import { Header } from '../../src/components/Header';
 import { AdminPerformanceDashboard } from '../../src/components/AdminPerformanceDashboard';
+import { authApi, adminApi } from '../../src/services/api';
 
-const ADMIN_EMAILS = [
+// Hardcoded admin emails as fallback
+const FALLBACK_ADMIN_EMAILS = [
   'ahmed.salah.ghazaly.91@gmail.com',
   'ahmed.salah.mohamed.ai2025@gmail.com',
   'pc.2025.ai@gmail.com', // Primary owner
@@ -40,12 +42,81 @@ export default function AdminPanel() {
   const { colors } = useTheme();
   const { language, isRTL } = useTranslation();
   const router = useRouter();
-  const { user } = useAppStore();
+  const { user, userRole, setUserRole, admins } = useAppStore();
+  const canAccessAdminPanel = useCanAccessAdminPanel();
+  const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
 
-  // Check admin access
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email?.toLowerCase());
+  // Check access on mount - synchronize with server
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!user) {
+        setLoading(false);
+        setHasAccess(false);
+        return;
+      }
 
-  if (!isAdmin) {
+      try {
+        // First check from store hook
+        if (canAccessAdminPanel) {
+          setHasAccess(true);
+          setLoading(false);
+          return;
+        }
+
+        // Check fallback emails
+        const email = user.email?.toLowerCase();
+        if (FALLBACK_ADMIN_EMAILS.includes(email)) {
+          setHasAccess(true);
+          setLoading(false);
+          return;
+        }
+
+        // Check if user is in admins list
+        const isInAdminsList = admins.some(
+          (a: any) => a.email?.toLowerCase() === email
+        );
+        if (isInAdminsList) {
+          setHasAccess(true);
+          // Update role in store
+          setUserRole('admin');
+          setLoading(false);
+          return;
+        }
+
+        // Refresh from server as last resort
+        const response = await authApi.getMe();
+        if (response.data?.role && ['owner', 'partner', 'admin'].includes(response.data.role)) {
+          setHasAccess(true);
+          setUserRole(response.data.role);
+        }
+      } catch (error) {
+        console.log('Error checking admin access:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAccess();
+  }, [user, canAccessAdminPanel, admins, setUserRole]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <Header title={language === 'ar' ? 'لوحة التحكم' : 'Admin Panel'} showBack showSearch={false} showCart={false} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={NEON_NIGHT_THEME.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            {language === 'ar' ? 'جاري التحقق...' : 'Checking access...'}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Check admin access - using dynamic role check
+  if (!hasAccess) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <Header title={language === 'ar' ? 'لوحة التحكم' : 'Admin Panel'} showBack showSearch={false} showCart={false} />
@@ -56,6 +127,9 @@ export default function AdminPanel() {
           </Text>
           <Text style={[styles.accessDeniedSubtext, { color: colors.textSecondary }]}>
             {language === 'ar' ? 'ليس لديك صلاحية الوصول لهذه الصفحة' : 'You do not have permission to access this page'}
+          </Text>
+          <Text style={[styles.accessDeniedHint, { color: colors.textSecondary }]}>
+            {language === 'ar' ? 'تواصل مع المالك للحصول على صلاحية الإدارة' : 'Contact the owner to get admin access'}
           </Text>
         </View>
       </SafeAreaView>
