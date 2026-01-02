@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,7 @@ import Animated, {
 import { useTheme } from '../src/hooks/useTheme';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { useAppStore, NEON_NIGHT_THEME } from '../src/store/appStore';
-import { ordersApi } from '../src/services/api';
+import { ordersApi, cartApi } from '../src/services/api';
 import ConfettiEffect from '../src/components/ui/ConfettiEffect';
 
 const { width: screenWidth } = Dimensions.get('window');
