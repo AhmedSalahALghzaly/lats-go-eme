@@ -354,9 +354,13 @@ export default function CartScreen() {
     }
   };
 
-  const handleVoidBundle = (bundleGroupId: string) => {
-    voidBundleDiscount(bundleGroupId);
-    fetchCart();
+  const handleVoidBundle = async (bundleGroupId: string) => {
+    try {
+      await cartApi.voidBundle(bundleGroupId);
+      fetchCart();
+    } catch (error) {
+      console.error('Error voiding bundle:', error);
+    }
   };
 
   // Group items by bundle
@@ -365,9 +369,10 @@ export default function CartScreen() {
     const regular: any[] = [];
 
     items.forEach(item => {
-      if (item.bundleGroupId) {
-        const existing = bundles.get(item.bundleGroupId) || [];
-        bundles.set(item.bundleGroupId, [...existing, item]);
+      if (item.bundle_group_id || item.bundleGroupId) {
+        const bundleId = item.bundle_group_id || item.bundleGroupId;
+        const existing = bundles.get(bundleId) || [];
+        bundles.set(bundleId, [...existing, item]);
       } else {
         regular.push(item);
       }
@@ -376,21 +381,26 @@ export default function CartScreen() {
     return { bundles, regular };
   }, [items]);
 
+  // Calculate totals from server-side cart data
   const getTotal = () => {
     return items.reduce((sum, item) => {
-      const price = item.discountedPrice || item.product?.price || 0;
+      const price = item.final_unit_price || item.discountedPrice || item.product?.price || 0;
+      return sum + price * item.quantity;
+    }, 0);
+  };
+
+  const getOriginalTotal = () => {
+    return items.reduce((sum, item) => {
+      const price = item.original_unit_price || item.product?.price || 0;
       return sum + price * item.quantity;
     }, 0);
   };
 
   const getTotalSavings = () => {
     return items.reduce((sum, item) => {
-      if (item.bundleDiscount && item.product?.price) {
-        const originalPrice = item.product.price;
-        const discountedPrice = originalPrice * (1 - item.bundleDiscount / 100);
-        return sum + (originalPrice - discountedPrice) * item.quantity;
-      }
-      return sum;
+      const originalPrice = item.original_unit_price || item.product?.price || 0;
+      const finalPrice = item.final_unit_price || item.product?.price || 0;
+      return sum + (originalPrice - finalPrice) * item.quantity;
     }, 0);
   };
 
