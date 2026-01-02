@@ -177,12 +177,21 @@ export default function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setAuthError(null);
     
     try {
-      // Create redirect URL based on platform
-      const redirectUrl = Platform.OS === 'web'
-        ? `${BACKEND_URL}/login`
-        : Linking.createURL('/login');
+      // Get the current URL for web or the expo scheme for native
+      let redirectUrl: string;
+      
+      if (Platform.OS === 'web') {
+        // For web, use the current origin
+        redirectUrl = window.location.origin + '/login';
+      } else {
+        // For native (Expo Go), use the Linking URL with /login path
+        redirectUrl = Linking.createURL('login');
+      }
+      
+      console.log('Auth redirect URL:', redirectUrl);
       
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       
@@ -190,13 +199,19 @@ export default function LoginScreen() {
         window.location.href = authUrl;
       } else {
         const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+        console.log('WebBrowser result:', result);
         
         if (result.type === 'success' && result.url) {
+          console.log('Auth success URL:', result.url);
           handleAuthUrl(result.url);
+        } else if (result.type === 'cancel') {
+          console.log('Auth cancelled by user');
+          setAuthError(t('loginCancelled') || 'Login cancelled');
         }
       }
     } catch (error) {
       console.error('Login error:', error);
+      setAuthError(t('loginError') || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
