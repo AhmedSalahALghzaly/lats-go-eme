@@ -2,11 +2,11 @@
  * useWebSocket - Real-time WebSocket hook for live cart synchronization
  * Provides live updates for cart, orders, and favorites
  */
-import { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState, createContext, useContext, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAppStore } from '../store/appStore';
 import { useCartStore } from '../store/useCartStore';
-import { cartApi, orderApi, favoriteApi } from '../services/api';
+import { cartApi, orderApi } from '../services/api';
 import Constants from 'expo-constants';
 
 interface WebSocketMessage {
@@ -15,6 +15,16 @@ interface WebSocketMessage {
   tables?: string[];
   user_id?: string;
 }
+
+interface WebSocketContextType {
+  isConnected: boolean;
+  lastUpdate: Date | null;
+  refresh: () => void;
+  syncCart: () => Promise<void>;
+  syncOrders: () => Promise<void>;
+}
+
+const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export const useWebSocket = () => {
   const socketRef = useRef<Socket | null>(null);
@@ -113,7 +123,7 @@ export const useWebSocket = () => {
     console.log('[WebSocket] Connecting to:', wsUrl);
 
     socketRef.current = io(wsUrl, {
-      path: '/ws/socket.io',
+      path: '/api/ws',
       transports: ['websocket', 'polling'],
       auth: {
         user_id: user.id,
@@ -199,19 +209,7 @@ export const useWebSocket = () => {
   };
 };
 
-// Lightweight context provider for WebSocket state
-import React, { createContext, useContext, ReactNode } from 'react';
-
-interface WebSocketContextType {
-  isConnected: boolean;
-  lastUpdate: Date | null;
-  refresh: () => void;
-  syncCart: () => Promise<void>;
-  syncOrders: () => Promise<void>;
-}
-
-const WebSocketContext = createContext<WebSocketContextType | null>(null);
-
+// WebSocket Provider Component
 export const WebSocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const ws = useWebSocket();
   
@@ -223,10 +221,10 @@ export const WebSocketProvider: React.FC<{ children: ReactNode }> = ({ children 
     syncOrders: ws.syncOrders,
   };
   
-  return (
-    <WebSocketContext.Provider value={contextValue}>
-      {children}
-    </WebSocketContext.Provider>
+  return React.createElement(
+    WebSocketContext.Provider,
+    { value: contextValue },
+    children
   );
 };
 
