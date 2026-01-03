@@ -141,6 +141,7 @@ export const UnifiedShoppingHub: React.FC<UnifiedShoppingHubProps> = ({
   const targetUserData = customerData || user;
   const isOwnProfile = !isAdminView && !customerId;
   const canEdit = isOwnProfile || ['owner', 'partner', 'admin'].includes(userRole);
+  const canEditOrderStatus = ['owner', 'partner', 'admin'].includes(userRole);
 
   useEffect(() => {
     Animated.parallel([
