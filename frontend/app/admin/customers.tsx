@@ -108,7 +108,7 @@ export default function CustomersAdmin() {
     }
   }, []);
 
-  const openCustomerProfile = useCallback((customer, tab = 'favorites') => {
+  const openCustomerProfile = useCallback((customer, tab = 'profile') => {
     setSelectedCustomer(customer);
     setInitialTab(tab);
     setShowProfile(true);
