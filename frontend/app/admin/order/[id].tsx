@@ -233,10 +233,10 @@ export default function OrderDetailAdmin() {
       <Header title={language === 'ar' ? 'تفاصيل الطلب' : 'Order Details'} showBack showSearch={false} showCart={false} />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        {/* Order Number & Status */}
+        {/* Order Number & Status with Delete Button (Owner Only) */}
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.orderHeader}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.orderNumber, { color: colors.primary }]}>
                 {order.order_number}
               </Text>
@@ -245,17 +245,99 @@ export default function OrderDetailAdmin() {
               </Text>
             </View>
             <View style={[styles.statusBadge, { 
-              backgroundColor: order.status === 'complete' || order.status === 'delivered' ? '#10b981' : 
-                order.status === 'pending' ? '#f59e0b' : colors.primary 
+              backgroundColor: STATUS_COLORS[order.status] || colors.primary 
             }]}>
               <Text style={styles.statusText}>
                 {order.status === 'pending' ? (language === 'ar' ? 'قيد الانتظار' : 'Pending') :
-                 order.status === 'complete' ? (language === 'ar' ? 'مكتمل' : 'Complete') :
+                 order.status === 'confirmed' ? (language === 'ar' ? 'مؤكد' : 'Confirmed') :
+                 order.status === 'preparing' ? (language === 'ar' ? 'تحضير' : 'Preparing') :
+                 order.status === 'shipped' ? (language === 'ar' ? 'شحن' : 'Shipped') :
+                 order.status === 'out_for_delivery' ? (language === 'ar' ? 'في الطريق' : 'Out for Delivery') :
+                 order.status === 'delivered' ? (language === 'ar' ? 'تم التوصيل' : 'Delivered') :
+                 order.status === 'cancelled' ? (language === 'ar' ? 'ملغي' : 'Cancelled') :
                  order.status}
               </Text>
             </View>
+            {/* Owner-Only Delete Button */}
+            {isOwner && (
+              <TouchableOpacity
+                style={styles.deleteOrderBtn}
+                onPress={handleDeleteOrder}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <ActivityIndicator size="small" color="#EF4444" />
+                ) : (
+                  <Ionicons name="trash" size={20} color="#EF4444" />
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </View>
+
+        {/* Order Status Action Buttons (Admin/Owner) */}
+        {isAdmin && order.status !== 'cancelled' && order.status !== 'delivered' && (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+              <Ionicons name="sync" size={16} /> {language === 'ar' ? 'تحديث الحالة' : 'Update Status'}
+            </Text>
+            <View style={styles.statusButtonsRow}>
+              {statusButtons.map((btn) => {
+                const isCurrentStatus = order.status === btn.status;
+                const isUpdating = updatingStatus === btn.status;
+                return (
+                  <TouchableOpacity
+                    key={btn.status}
+                    style={[
+                      styles.statusBtn,
+                      { backgroundColor: isCurrentStatus ? STATUS_COLORS[btn.status] : colors.surface },
+                    ]}
+                    onPress={() => updateOrderStatus(btn.status)}
+                    disabled={isCurrentStatus || updatingStatus !== null}
+                  >
+                    {isUpdating ? (
+                      <ActivityIndicator size="small" color={isCurrentStatus ? '#FFF' : colors.text} />
+                    ) : (
+                      <>
+                        <Ionicons 
+                          name={btn.icon as any} 
+                          size={18} 
+                          color={isCurrentStatus ? '#FFF' : STATUS_COLORS[btn.status]} 
+                        />
+                        <Text style={[
+                          styles.statusBtnText, 
+                          { color: isCurrentStatus ? '#FFF' : colors.text }
+                        ]}>
+                          {btn.label}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            
+            {/* Cancel Button - Hidden after Shipped */}
+            {canCancel && (
+              <TouchableOpacity
+                style={[styles.cancelOrderBtn, { borderColor: '#EF4444' }]}
+                onPress={handleCancelOrder}
+                disabled={updatingStatus !== null}
+              >
+                {updatingStatus === 'cancelled' ? (
+                  <ActivityIndicator size="small" color="#EF4444" />
+                ) : (
+                  <>
+                    <Ionicons name="close-circle" size={18} color="#EF4444" />
+                    <Text style={styles.cancelOrderText}>
+                      {language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Customer Information */}
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
