@@ -229,7 +229,7 @@ export default function CustomersScreen() {
               </Text>
             </View>
           ) : (
-            sortedCustomers.map((customer: any, index: number) => {
+            sortedCustomers.map((customer, index) => {
               const userId = customer.user_id || customer.id;
               const orderInfo = customerOrderStatus[userId] || { status: 'no_active_order', activeCount: 0 };
               
