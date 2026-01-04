@@ -2090,15 +2090,20 @@ async def create_admin_order(data: AdminOrderCreate, request: Request):
 
 @api_router.get("/admin/orders/{order_id}")
 async def get_admin_order_detail(order_id: str, request: Request):
-    """Get order details for admin view"""
+    """Get order details - accessible by admin, owner, partner, and order owner"""
     user = await get_current_user(request)
     role = await get_user_role(user) if user else "guest"
-    if role not in ["owner", "partner", "admin"]:
-        raise HTTPException(status_code=403, detail="Access denied")
     
     order = await db.orders.find_one({"_id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Allow access if user is admin/owner/partner OR if user owns this order
+    is_admin_role = role in ["owner", "partner", "admin"]
+    is_order_owner = user and order.get("user_id") == user.get("id")
+    
+    if not is_admin_role and not is_order_owner:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     # Enrich items with product details if not present
     enriched_items = []
