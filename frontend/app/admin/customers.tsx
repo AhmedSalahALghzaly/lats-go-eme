@@ -64,8 +64,8 @@ export default function CustomersAdmin() {
       setCustomers(customersList);
 
       // Fetch pending order counts and status for each customer
-      const counts: { [key: string]: number } = {};
-      const statusMap: {[key: string]: { status: string; activeCount: number }} = {};
+      const counts = {};
+      const statusMap = {};
       
       for (const customer of customersList) {
         try {
@@ -77,10 +77,10 @@ export default function CustomersAdmin() {
           const orders = ordersRes.data?.orders || [];
           
           const activeStatuses = ['pending', 'confirmed', 'preparing', 'shipped', 'out_for_delivery'];
-          const activeOrders = orders.filter((o: any) => activeStatuses.includes(o.status));
+          const activeOrders = orders.filter((o) => activeStatuses.includes(o.status));
           
           if (activeOrders.length > 0) {
-            activeOrders.sort((a: any, b: any) => 
+            activeOrders.sort((a, b) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
             statusMap[customer.user_id] = {
