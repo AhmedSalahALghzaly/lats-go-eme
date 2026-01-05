@@ -9,11 +9,18 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { UnifiedShoppingHub } from '../../src/components/UnifiedShoppingHub';
 import { Header } from '../../src/components/Header';
 import { useTranslation } from '../../src/hooks/useTranslation';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function CartScreen() {
   const { colors } = useTheme();
   const { language } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+
+  // Determine which tab to show - default to cart, but allow orders via query param
+  const initialTab = (tab === 'orders' || tab === 'favorites' || tab === 'checkout' || tab === 'profile') 
+    ? tab 
+    : 'cart';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -23,7 +30,7 @@ export default function CartScreen() {
         showSearch={true} 
         showCart={false} 
       />
-      <UnifiedShoppingHub initialTab="cart" />
+      <UnifiedShoppingHub initialTab={initialTab as any} />
     </View>
   );
 }
