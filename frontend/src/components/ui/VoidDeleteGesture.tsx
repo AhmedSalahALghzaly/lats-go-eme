@@ -1,25 +1,27 @@
 /**
  * Void Delete Gesture Component
  * A specialized drag-to-delete gesture that creates an "implode" effect
+ * With fallback touch-based delete for better compatibility
  */
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   Dimensions,
   Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  useAnimatedGestureHandler,
   withSpring,
   withTiming,
   runOnJS,
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
-import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -40,7 +42,7 @@ export const VoidDeleteGesture: React.FC<VoidDeleteGestureProps> = ({
   const translateX = useSharedValue(0);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
-  const isDeleting = useSharedValue(false);
+  const [showDeleteButton, setShowDeleteButton] = useState(false);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -51,34 +53,37 @@ export const VoidDeleteGesture: React.FC<VoidDeleteGestureProps> = ({
     onDelete();
   };
 
-  const gestureHandler = useAnimatedGestureHandler<
-    PanGestureHandlerGestureEvent,
-    { startX: number }
-  >({
-    onStart: (_, ctx) => {
-      ctx.startX = translateX.value;
-    },
-    onActive: (event, ctx) => {
-      if (disabled) return;
+  const handleLongPress = () => {
+    if (disabled) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowDeleteButton(true);
+  };
+
+  const handleDeletePress = () => {
+    setShowDeleteButton(false);
+    // Animate out
+    scale.value = withTiming(0, { duration: 200 });
+    opacity.value = withTiming(0, { duration: 200 }, () => {
+      runOnJS(triggerDelete)();
+    });
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteButton(false);
+  };
+
+  const panGesture = Gesture.Pan()
+    .enabled(!disabled)
+    .onUpdate((event) => {
       // Only allow left swipe
-      const newX = ctx.startX + event.translationX;
+      const newX = event.translationX;
       translateX.value = Math.min(0, newX);
       
       // Calculate progress towards deletion
       const progress = Math.abs(translateX.value) / Math.abs(DELETE_THRESHOLD);
-      scale.value = interpolate(progress, [0, 1], [1, 0.8], Extrapolate.CLAMP);
-      
-      // Trigger haptic when crossing threshold
-      if (translateX.value < DELETE_THRESHOLD && !isDeleting.value) {
-        isDeleting.value = true;
-        runOnJS(triggerHaptic)();
-      } else if (translateX.value > DELETE_THRESHOLD && isDeleting.value) {
-        isDeleting.value = false;
-      }
-    },
-    onEnd: () => {
-      if (disabled) return;
-      
+      scale.value = interpolate(progress, [0, 1], [1, 0.85], Extrapolate.CLAMP);
+    })
+    .onEnd(() => {
       if (translateX.value < DELETE_THRESHOLD) {
         // Implode animation
         scale.value = withTiming(0, { duration: 200 });
@@ -91,8 +96,18 @@ export const VoidDeleteGesture: React.FC<VoidDeleteGestureProps> = ({
         translateX.value = withSpring(0);
         scale.value = withSpring(1);
       }
-    },
-  });
+    });
+
+  const longPressGesture = Gesture.LongPress()
+    .enabled(!disabled)
+    .minDuration(500)
+    .onEnd((event, success) => {
+      if (success) {
+        runOnJS(handleLongPress)();
+      }
+    });
+
+  const composedGestures = Gesture.Race(panGesture, longPressGesture);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -120,12 +135,37 @@ export const VoidDeleteGesture: React.FC<VoidDeleteGestureProps> = ({
         <Text style={styles.voidText}>Release to delete</Text>
       </Animated.View>
 
-      {/* Main content */}
-      <PanGestureHandler onGestureEvent={gestureHandler} enabled={!disabled}>
+      {/* Main content with gesture */}
+      <GestureDetector gesture={composedGestures}>
         <Animated.View style={[styles.content, animatedStyle]}>
           {children}
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
+
+      {/* Delete confirmation overlay */}
+      {showDeleteButton && (
+        <TouchableWithoutFeedback onPress={handleCancelDelete}>
+          <View style={styles.deleteOverlay}>
+            <View style={styles.deleteConfirm}>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDeletePress}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="trash" size={20} color="#FFF" />
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelDelete}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      )}
     </View>
   );
 };
@@ -161,6 +201,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
     textAlign: 'center',
+  },
+  deleteOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  deleteConfirm: {
+    backgroundColor: '#1E1E3F',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    gap: 12,
+    minWidth: 200,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+  },
+  deleteButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  cancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  cancelButtonText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
