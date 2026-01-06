@@ -199,14 +199,14 @@ export default function OwnerDashboard() {
 
   // Partners icon handlers
   const handlePartnersTap = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptic.menu();
     setShowPartnersModal(true);
   };
 
   const handlePartnersLongPressStart = () => {
     partnersLongPressTimer.current = setTimeout(() => {
       setIsLongPressing(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      haptic.longPress();
     }, 500);
   };
 
