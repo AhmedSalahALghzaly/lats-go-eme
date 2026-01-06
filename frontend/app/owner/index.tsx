@@ -238,7 +238,7 @@ export default function OwnerDashboard() {
     setPartnerError('');
 
     try {
-      await adminApi.addAdmin({
+      await adminApi.create({
         email: partnerEmail.trim().toLowerCase(),
         role: 'partner',
       });
