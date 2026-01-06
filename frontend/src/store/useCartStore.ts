@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { cartApi } from '../services/api';
 
 export interface CartItemData {
   productId: string;
@@ -32,7 +33,7 @@ interface CartState {
   getCartTotal: () => number;
   getCartSubtotal: () => number;
   getBundleGroups: () => Map<string, CartItemData[]>;
-  voidBundleDiscount: (bundleGroupId: string) => void;
+  voidBundleDiscount: (bundleGroupId: string, syncToBackend?: boolean) => void;
   setCartItems: (items: any[]) => void;
 }
 
