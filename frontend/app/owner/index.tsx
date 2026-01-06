@@ -251,6 +251,7 @@ export default function OwnerDashboard() {
         setShowAddPartnerModal(false);
         setPartnerEmail('');
         setAddSuccess(false);
+        setShowConfetti(false);
         fetchPartners();
       }, 1500);
     } catch (error: any) {
