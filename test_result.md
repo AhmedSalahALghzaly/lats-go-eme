@@ -394,6 +394,56 @@ frontend:
         agent: "testing"
         comment: "✅ Backend cart system v4.0 verified working. All 20 API tests passed (100% success rate). Health check confirms v4.0.0. Cart APIs (GET /cart, POST /cart/add, PUT /cart/update, DELETE /cart/void-bundle, DELETE /cart/clear) exist and require authentication. Order API (POST /orders) requires authentication. All endpoints properly secured. Enhanced pricing fields (original_unit_price, final_unit_price, discount_details) implemented in server-side cart storage. Bundle discount support confirmed. Analytics API includes order_source_breakdown and discount_performance fields."
 
+  # ======================= Bug Fixes - Marketing Suite =======================
+
+  - task: "DELETE Promotions Endpoint Fix"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed DELETE /promotions/{promotion_id} endpoint. Added proper authentication check (owner/partner/admin roles). Changed from soft delete to permanent deletion."
+
+  - task: "DELETE Bundle Offers Endpoint Fix"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed DELETE /bundle-offers/{offer_id} endpoint. Added proper authentication check. Implemented cascading deletion to remove bundle references from carts. Changed from soft delete to permanent deletion."
+
+  - task: "Bundle Offer Details Page - Dynamic API Fetch"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/offer/[id].tsx"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Completely rewrote offer/[id].tsx to use bundleOfferApi.getById(id) instead of static mock data. Now displays dynamic offer name, description, products, discount, and target car model. Added loading and error states."
+
+  - task: "Car Model GetById Endpoint Fix"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed GET /car-models/{model_id} endpoint. Updated to use car_brand_id field (instead of brand_id) and compatible_car_models field (instead of car_model_ids) for proper product matching."
+
 metadata:
   created_by: "main_agent"
   version: "2.0"
