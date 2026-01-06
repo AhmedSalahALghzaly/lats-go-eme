@@ -103,6 +103,16 @@ export default function HomeScreen() {
       setGlobalProductBrands(productBrandsData);
       setGlobalProducts(productsData);
 
+      // Fetch partners list to enable Owner icon for partners in footer
+      try {
+        const partnersRes = await partnerApi.getAll();
+        const partnersData = partnersRes.data || [];
+        setGlobalPartners(partnersData);
+        console.log('Partners fetched:', partnersData.length);
+      } catch (error) {
+        console.error('Error fetching partners:', error);
+      }
+
       // Fetch favorites if user is logged in
       if (user) {
         try {
