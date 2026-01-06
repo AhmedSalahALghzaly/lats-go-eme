@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   imageWrapper: {
-    marginBottom: 10,
+    marginBottom: 6,
   },
   imageContainer: {
     width: 64,     // 56 * 1.15 ≈ 64
