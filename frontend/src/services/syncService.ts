@@ -22,7 +22,7 @@ import {
 } from './api';
 
 class SyncService {
-  private syncInterval: NodeJS.Timeout | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
   private isRunning = false;
   private syncIntervalMs = 60000; // 1 minute
   private wasOffline = false;
