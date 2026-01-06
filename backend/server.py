@@ -2772,6 +2772,89 @@ async def seed_database():
     ]
     await db.products.insert_many(products)
 
+    # Seed promotions
+    promotions = [
+        {
+            "_id": "promo_1",
+            "title": "Summer Brake Special",
+            "title_ar": "عرض فرامل الصيف",
+            "image": "https://customer-assets.emergentagent.com/job_run-al-project/artifacts/04kxu3h3_car-brake-parts-and-components-displayed-on-a-whit-2025-12-08-16-53-24-utc.jpg",
+            "promotion_type": "slider",
+            "is_active": True,
+            "target_product_id": "prod_2",
+            "target_car_model_id": None,
+            "sort_order": 0,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "deleted_at": None,
+        },
+        {
+            "_id": "promo_2",
+            "title": "Engine Parts Sale",
+            "title_ar": "تخفيضات قطع المحرك",
+            "image": "https://customer-assets.emergentagent.com/job_run-al-project/artifacts/e0wpx2r9_car-parts-2025-02-25-15-02-08-utc.jpg",
+            "promotion_type": "slider",
+            "is_active": True,
+            "target_product_id": None,
+            "target_car_model_id": "cm_corolla",
+            "sort_order": 1,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "deleted_at": None,
+        },
+    ]
+    await db.promotions.insert_many(promotions)
+
+    # Seed bundle offers
+    bundle_offers = [
+        {
+            "_id": "bundle_1",
+            "name": "Brake System Bundle",
+            "name_ar": "حزمة نظام الفرامل",
+            "description": "Complete brake system maintenance package - includes brake pads and disc rotor",
+            "description_ar": "حزمة صيانة نظام الفرامل الكاملة - تشمل تيل الفرامل والطارة",
+            "discount_percentage": 15,
+            "target_car_model_id": "cm_corolla",
+            "product_ids": ["prod_2", "prod_8"],
+            "image": "https://customer-assets.emergentagent.com/job_run-al-project/artifacts/04kxu3h3_car-brake-parts-and-components-displayed-on-a-whit-2025-12-08-16-53-24-utc.jpg",
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "deleted_at": None,
+        },
+        {
+            "_id": "bundle_2",
+            "name": "Engine Performance Pack",
+            "name_ar": "حزمة أداء المحرك",
+            "description": "Boost your engine performance with this essential combo",
+            "description_ar": "عزز أداء محركك مع هذه الحزمة الأساسية",
+            "discount_percentage": 12,
+            "target_car_model_id": "cm_camry",
+            "product_ids": ["prod_1", "prod_4", "prod_6"],
+            "image": "https://customer-assets.emergentagent.com/job_run-al-project/artifacts/e0wpx2r9_car-parts-2025-02-25-15-02-08-utc.jpg",
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "deleted_at": None,
+        },
+        {
+            "_id": "bundle_3",
+            "name": "Electrical Essentials",
+            "name_ar": "أساسيات الكهرباء",
+            "description": "Keep your electrical system running smoothly",
+            "description_ar": "حافظ على عمل نظامك الكهربائي بسلاسة",
+            "discount_percentage": 10,
+            "target_car_model_id": "cm_civic",
+            "product_ids": ["prod_5", "prod_7"],
+            "image": "https://customer-assets.emergentagent.com/job_run-al-project/artifacts/yt3zfrnf_car-parts-2025-02-24-20-10-48-utc%20%282%29.jpg",
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "deleted_at": None,
+        },
+    ]
+    await db.bundle_offers.insert_many(bundle_offers)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
