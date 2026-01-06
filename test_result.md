@@ -511,15 +511,18 @@ frontend:
 
   - task: "Backend DELETE Endpoints Logging"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added detailed logging to DELETE /promotions/{id} and DELETE /bundle-offers/{id} endpoints. Logs user email, role, and deletion result. Returns clear error messages including role information for debugging."
+      - working: true
+        agent: "testing"
+        comment: "✅ Backend DELETE Endpoints Logging tested successfully. DELETE requests are properly logged with detailed information: 'DELETE /promotions/promo_1 - Starting deletion request', 'DELETE /promotions/promo_1 - User: None, Role: guest', 'DELETE /promotions/promo_1 - Access denied for role: guest'. Same detailed logging confirmed for bundle offers DELETE endpoint. All requests show proper user role identification and access control logging."
 
   - task: "Order Detail Display Enhancement"
     implemented: true
