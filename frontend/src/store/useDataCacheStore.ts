@@ -1,6 +1,7 @@
 /**
  * Data Cache Store - Handles cached data for offline-first
  * Split from monolithic appStore for better performance
+ * v2.0 - Added Offline Action Queue for robust offline support
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -8,12 +9,37 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
+// Offline Action Types
+export type OfflineActionType = 
+  | 'cart_add' 
+  | 'cart_update' 
+  | 'cart_clear' 
+  | 'order_create' 
+  | 'favorite_toggle';
+
+export interface OfflineAction {
+  id: string;
+  type: OfflineActionType;
+  endpoint: string;
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  payload?: any;
+  timestamp: number;
+  retryCount: number;
+  maxRetries: number;
+  status: 'pending' | 'processing' | 'failed';
+  errorMessage?: string;
+}
+
 interface DataCacheState {
   // Sync State
   syncStatus: SyncStatus;
   lastSyncTime: number | null;
   isOnline: boolean;
   syncError: string | null;
+
+  // Offline Action Queue
+  offlineActionsQueue: OfflineAction[];
+  isProcessingQueue: boolean;
 
   // Data cache for offline-first
   carBrands: any[];
@@ -35,6 +61,14 @@ interface DataCacheState {
   setSyncError: (error: string | null) => void;
   setLastSyncTime: (time: number) => void;
 
+  // Offline Queue Actions
+  addToOfflineQueue: (action: Omit<OfflineAction, 'id' | 'timestamp' | 'retryCount' | 'status'>) => void;
+  removeFromOfflineQueue: (actionId: string) => void;
+  updateQueueAction: (actionId: string, updates: Partial<OfflineAction>) => void;
+  clearOfflineQueue: () => void;
+  setProcessingQueue: (isProcessing: boolean) => void;
+  getQueueLength: () => number;
+
   // Data Actions
   setCarBrands: (data: any[]) => void;
   setCarModels: (data: any[]) => void;
@@ -50,13 +84,24 @@ interface DataCacheState {
   setOrders: (data: any[]) => void;
 }
 
+// Generate unique ID for actions
+const generateActionId = (): string => {
+  return `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
 export const useDataCacheStore = create<DataCacheState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       syncStatus: 'idle',
       lastSyncTime: null,
       isOnline: true,
       syncError: null,
+      
+      // Offline Queue
+      offlineActionsQueue: [],
+      isProcessingQueue: false,
+
+      // Data
       carBrands: [],
       carModels: [],
       productBrands: [],
@@ -75,6 +120,37 @@ export const useDataCacheStore = create<DataCacheState>()(
       setSyncError: (error) => set({ syncError: error }),
       setLastSyncTime: (time) => set({ lastSyncTime: time }),
 
+      // Offline Queue Actions
+      addToOfflineQueue: (action) => set((state) => ({
+        offlineActionsQueue: [
+          ...state.offlineActionsQueue,
+          {
+            ...action,
+            id: generateActionId(),
+            timestamp: Date.now(),
+            retryCount: 0,
+            status: 'pending' as const,
+          },
+        ],
+      })),
+
+      removeFromOfflineQueue: (actionId) => set((state) => ({
+        offlineActionsQueue: state.offlineActionsQueue.filter((a) => a.id !== actionId),
+      })),
+
+      updateQueueAction: (actionId, updates) => set((state) => ({
+        offlineActionsQueue: state.offlineActionsQueue.map((a) =>
+          a.id === actionId ? { ...a, ...updates } : a
+        ),
+      })),
+
+      clearOfflineQueue: () => set({ offlineActionsQueue: [] }),
+
+      setProcessingQueue: (isProcessing) => set({ isProcessingQueue: isProcessing }),
+
+      getQueueLength: () => get().offlineActionsQueue.length,
+
+      // Data Actions
       setCarBrands: (data) => set({ carBrands: data }),
       setCarModels: (data) => set({ carModels: data }),
       setProductBrands: (data) => set({ productBrands: data }),
@@ -93,6 +169,7 @@ export const useDataCacheStore = create<DataCacheState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         lastSyncTime: state.lastSyncTime,
+        offlineActionsQueue: state.offlineActionsQueue,
         carBrands: state.carBrands,
         carModels: state.carModels,
         productBrands: state.productBrands,
@@ -108,6 +185,8 @@ export const useDataCacheStore = create<DataCacheState>()(
 // Selectors
 export const useSyncStatus = () => useDataCacheStore((state) => state.syncStatus);
 export const useIsOnline = () => useDataCacheStore((state) => state.isOnline);
+export const useOfflineQueue = () => useDataCacheStore((state) => state.offlineActionsQueue);
+export const useIsProcessingQueue = () => useDataCacheStore((state) => state.isProcessingQueue);
 export const useCarBrands = () => useDataCacheStore((state) => state.carBrands);
 export const useCarModels = () => useDataCacheStore((state) => state.carModels);
 export const useProductBrands = () => useDataCacheStore((state) => state.productBrands);
