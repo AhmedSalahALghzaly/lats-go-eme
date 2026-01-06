@@ -504,7 +504,19 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Fixed removeFromCart to only void bundle discount if removing item leaves less than 2 items in bundle (incomplete bundle). Previously was voiding discount whenever any bundle item was removed."
+        comment: "CRITICAL FIX: removeFromCart now ALWAYS voids bundle discount when ANY bundle item is removed (bundle becomes incomplete). Also syncs with backend via cartApi.voidBundle(). voidBundleDiscount now properly resets discountedPrice to originalPrice."
+
+  - task: "Backend DELETE Endpoints Logging"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added detailed logging to DELETE /promotions/{id} and DELETE /bundle-offers/{id} endpoints. Logs user email, role, and deletion result. Returns clear error messages including role information for debugging."
 
   - task: "Order Detail Display Enhancement"
     implemented: true
