@@ -264,11 +264,11 @@ export default function OwnerDashboard() {
   const handleDeletePartner = async (partner: any) => {
     try {
       await adminApi.removeAdmin(partner.id);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      haptic.delete();
       fetchPartners();
     } catch (error) {
       console.error('Error deleting partner:', error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      haptic.error();
     }
   };
 
