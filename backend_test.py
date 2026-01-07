@@ -9,8 +9,8 @@ import json
 import sys
 from typing import Dict, Any, Optional
 
-# Backend URL
-BASE_URL = "http://localhost:8001/api"
+# Backend URL - using external URL from environment
+BASE_URL = "https://ecommerce-dev-3.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):
