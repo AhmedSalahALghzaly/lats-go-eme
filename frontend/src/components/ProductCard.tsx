@@ -17,16 +17,19 @@ interface ProductCardProps {
     price: number;
     image_url?: string;
     product_brand_id?: string;
-    // New fields for enhanced display
+    // Enhanced fields for detailed display
     product_brand_name?: string;
     product_brand_name_ar?: string;
     manufacturer_country?: string;
+    manufacturer_country_ar?: string;
     sku?: string;
     compatible_car_model?: string;
     compatible_car_model_ar?: string;
+    compatible_car_models_count?: number;
   };
   onAddToCart?: (quantity: number) => void;
   cardWidth?: number; // Optional prop to override default width
+  showDetails?: boolean; // Optional prop to show/hide extra details (default: true)
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, cardWidth }) => {
