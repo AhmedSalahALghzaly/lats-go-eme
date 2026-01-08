@@ -107,6 +107,9 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
   const hasChildren = category.children && category.children.length > 0;
   const iconData = iconMap[category.icon] || { icon: 'cube-outline', gradient: ['#667EEA', '#764BA2'] };
   const isMainCategory = level === 0;
+  
+  // Check if category has an uploaded image
+  const hasImage = category.image_data && category.image_data.length > 0;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -123,7 +126,7 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
   };
 
   if (isMainCategory) {
-    // Main Category - Card Style with Gradient Icon
+    // Main Category - Card Style with Gradient Icon or Image
     return (
       <View style={styles.mainCategoryWrapper}>
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -147,19 +150,29 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
               },
             ]}
           >
-            {/* Gradient Icon Container */}
-            <LinearGradient
-              colors={iconData.gradient as any}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.mainIconGradient}
-            >
-              <MaterialCommunityIcons
-                name={iconData.icon as any}
-                size={28}
-                color="#FFFFFF"
-              />
-            </LinearGradient>
+            {/* Image or Gradient Icon Container */}
+            {hasImage ? (
+              <View style={styles.mainImageContainer}>
+                <Image
+                  source={{ uri: category.image_data }}
+                  style={styles.mainCategoryImage}
+                  resizeMode="cover"
+                />
+              </View>
+            ) : (
+              <LinearGradient
+                colors={iconData.gradient as any}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.mainIconGradient}
+              >
+                <MaterialCommunityIcons
+                  name={iconData.icon as any}
+                  size={28}
+                  color="#FFFFFF"
+                />
+              </LinearGradient>
+            )}
 
             {/* Category Info */}
             <View style={[styles.mainCategoryInfo, isRTL && styles.mainCategoryInfoRTL]}>
@@ -235,13 +248,21 @@ const AnimatedCategory: React.FC<AnimatedCategoryProps> = ({
           isRTL && styles.subCategoryCardRTL,
         ]}
       >
-        {/* Sub Icon */}
-        <View style={[styles.subIconContainer, { backgroundColor: colors.primary + '10' }]}>
-          <MaterialCommunityIcons
-            name={subIcon as any}
-            size={20}
-            color={colors.primary}
-          />
+        {/* Sub Icon or Image */}
+        <View style={[styles.subIconContainer, { backgroundColor: hasImage ? 'transparent' : colors.primary + '10' }]}>
+          {hasImage ? (
+            <Image
+              source={{ uri: category.image_data }}
+              style={styles.subCategoryImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <MaterialCommunityIcons
+              name={subIcon as any}
+              size={20}
+              color={colors.primary}
+            />
+          )}
         </View>
 
         {/* Sub Category Name */}
