@@ -217,6 +217,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
       onPress={() => router.push(`/product/${product.id}`)}
       activeOpacity={0.7}
     >
+      {/* Image Container with Brand Badge */}
       <View style={[styles.imageContainer, { backgroundColor: colors.surface }]}>
         {product.image_url ? (
           <Image
@@ -227,12 +228,62 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
         ) : (
           <Ionicons name="cube-outline" size={48} color={colors.textSecondary} />
         )}
+        
+        {/* Brand Badge Overlay */}
+        {showDetails && getBrandName() && (
+          <View style={[styles.brandBadge, { backgroundColor: colors.primary + 'E6' }]}>
+            <Text style={styles.brandBadgeText} numberOfLines={1}>
+              {getBrandName()}
+            </Text>
+          </View>
+        )}
       </View>
       
       <View style={styles.content}>
+        {/* Product Name */}
         <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
           {getName()}
         </Text>
+        
+        {/* Product Details Section */}
+        {showDetails && (
+          <View style={styles.detailsContainer}>
+            {/* SKU */}
+            {product.sku && (
+              <View style={[styles.detailRow, isRTL && styles.detailRowRTL]}>
+                <Ionicons name="barcode-outline" size={10} color={colors.textSecondary} />
+                <Text style={[styles.detailText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {product.sku}
+                </Text>
+              </View>
+            )}
+            
+            {/* Country of Origin */}
+            {getCountry() && (
+              <View style={[styles.detailRow, isRTL && styles.detailRowRTL]}>
+                <Ionicons name="globe-outline" size={10} color={colors.textSecondary} />
+                <Text style={[styles.detailText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {getCountry()}
+                </Text>
+              </View>
+            )}
+            
+            {/* Compatible Car Model */}
+            {getCarModelName() && (
+              <View style={[styles.detailRow, isRTL && styles.detailRowRTL]}>
+                <Ionicons name="car-sport-outline" size={10} color={colors.primary} />
+                <Text style={[styles.detailText, { color: colors.primary }]} numberOfLines={1}>
+                  {getCarModelName()}
+                  {product.compatible_car_models_count && product.compatible_car_models_count > 1 && (
+                    <Text style={{ color: colors.textSecondary }}>
+                      {' '}+{product.compatible_car_models_count - 1}
+                    </Text>
+                  )}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
         
         {/* Quantity Selector Row */}
         <View style={[styles.quantityRow, isRTL && styles.quantityRowRTL]}>
