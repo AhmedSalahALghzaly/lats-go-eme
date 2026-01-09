@@ -364,7 +364,12 @@ export default function ProductDetailScreen() {
                 onPress={() => setSelectedImageIndex(index)}
                 activeOpacity={0.7}
               >
-                <Image source={{ uri: img }} style={styles.thumbnailImage} />
+                <Image 
+                  source={{ uri: img }} 
+                  style={styles.thumbnailImage}
+                  contentFit="cover"
+                  cachePolicy="disk"
+                />
                 {selectedImageIndex === index && (
                   <View style={[styles.thumbnailOverlay, { borderColor: colors.primary }]} />
                 )}
