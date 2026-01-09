@@ -152,6 +152,31 @@ export default function OwnerDashboard() {
     }
   }, [setGlobalPartners]);
 
+  // Fetch all data for global search
+  const fetchAllDataForSearch = useCallback(async () => {
+    try {
+      // Fetch suppliers
+      const suppliersRes = await suppliersApi.getAll();
+      if (suppliersRes.data) setSuppliers(suppliersRes.data);
+      
+      // Fetch distributors
+      const distributorsRes = await distributorsApi.getAll();
+      if (distributorsRes.data) setDistributors(distributorsRes.data);
+      
+      // Fetch customers
+      const customersRes = await customersApi.getAll();
+      if (customersRes.data) setCustomers(customersRes.data);
+      
+      // Fetch admins
+      const adminsRes = await adminsApi.getAll();
+      if (adminsRes.data) setAdmins(adminsRes.data);
+      
+      console.log('All data fetched for global search');
+    } catch (error) {
+      console.error('Error fetching data for search:', error);
+    }
+  }, [setSuppliers, setDistributors, setCustomers, setAdmins]);
+
   // Fetch partners on mount and set up auto-refresh
   useEffect(() => {
     fetchPartners();
