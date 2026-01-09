@@ -11,8 +11,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
