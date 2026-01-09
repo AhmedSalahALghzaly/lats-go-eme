@@ -375,19 +375,37 @@ export default function OwnerDashboard() {
             </Text>
           </View>
 
-          {/* Partners Icon */}
-          <TouchableOpacity
-            style={styles.partnersButton}
-            onPress={handlePartnersTap}
-            onPressIn={handlePartnersLongPressStart}
-            onPressOut={handlePartnersLongPressEnd}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="people-circle-outline" size={28} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.partnersButtonText}>
-              {language === 'ar' ? 'الشركاء' : 'Partners'}
-            </Text>
-          </TouchableOpacity>
+          {/* Search & Partners Icons */}
+          <View style={styles.headerActionsContainer}>
+            {/* Global Search Icon */}
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={() => {
+                haptic('light');
+                setShowGlobalSearch(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="search" size={24} color="rgba(255,255,255,0.9)" />
+              <Text style={styles.partnersButtonText}>
+                {language === 'ar' ? 'بحث' : 'Search'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Partners Icon */}
+            <TouchableOpacity
+              style={styles.partnersButton}
+              onPress={handlePartnersTap}
+              onPressIn={handlePartnersLongPressStart}
+              onPressOut={handlePartnersLongPressEnd}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="people-circle-outline" size={28} color="rgba(255,255,255,0.9)" />
+              <Text style={styles.partnersButtonText}>
+                {language === 'ar' ? 'الشركاء' : 'Partners'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <SyncIndicator compact />
         </View>
