@@ -1,0 +1,11 @@
+# Al-Ghazaly Auto Parts - Kubernetes Namespace
+# Creates isolated namespace for all application resources
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: alghazaly
+  labels:
+    app.kubernetes.io/name: alghazaly-auto-parts
+    app.kubernetes.io/managed-by: kubectl
+    environment: production

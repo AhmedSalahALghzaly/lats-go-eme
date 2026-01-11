@@ -1,0 +1,25 @@
+# Al-Ghazaly Auto Parts - Backend Service
+# Exposes the FastAPI backend within the cluster
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: alghazaly
+  labels:
+    app: backend
+    app.kubernetes.io/name: alghazaly-backend
+    app.kubernetes.io/component: api
+  annotations:
+    # For service mesh integration (optional)
+    # service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+  sessionAffinity: None

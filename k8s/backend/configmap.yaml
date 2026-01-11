@@ -1,0 +1,32 @@
+# Al-Ghazaly Auto Parts - Backend ConfigMap
+# Non-sensitive configuration for the FastAPI backend
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: alghazaly
+  labels:
+    app: backend
+    app.kubernetes.io/name: alghazaly-backend
+    app.kubernetes.io/component: api
+data:
+  # Application Settings
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  
+  # Database Settings
+  DB_NAME: "alghazaly_autoparts"
+  
+  # Server Settings
+  HOST: "0.0.0.0"
+  PORT: "8001"
+  WORKERS: "4"
+  
+  # CORS Settings
+  CORS_ORIGINS: "https://alghazaly.com,https://www.alghazaly.com"
+  
+  # JWT Settings
+  JWT_ALGORITHM: "HS256"
+  JWT_EXPIRATION_HOURS: "24"

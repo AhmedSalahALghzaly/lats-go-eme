@@ -1,0 +1,108 @@
+# Al-Ghazaly Auto Parts - Ingress Configuration
+# Routes external traffic to frontend and backend services
+# Supports both nginx-ingress and AWS ALB ingress controllers
+
+---
+# Option 1: Nginx Ingress Controller
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alghazaly-ingress
+  namespace: alghazaly
+  labels:
+    app.kubernetes.io/name: alghazaly-ingress
+  annotations:
+    # Nginx Ingress annotations
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+    
+    # TLS with cert-manager
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # WebSocket support
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - alghazaly.com
+        - www.alghazaly.com
+        - api.alghazaly.com
+      secretName: alghazaly-tls
+  rules:
+    # Main domain - Frontend
+    - host: alghazaly.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+          # API routes through frontend's nginx proxy
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8001
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8001
+    
+    # WWW redirect handled by frontend nginx
+    - host: www.alghazaly.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+    
+    # Direct API access
+    - host: api.alghazaly.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8001
+
+---
+# Certificate for TLS (cert-manager)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: alghazaly-tls
+  namespace: alghazaly
+spec:
+  secretName: alghazaly-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - alghazaly.com
+    - www.alghazaly.com
+    - api.alghazaly.com

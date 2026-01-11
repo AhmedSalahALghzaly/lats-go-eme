@@ -1,0 +1,21 @@
+# Al-Ghazaly Auto Parts - Frontend Service
+# Exposes the frontend within the cluster
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: alghazaly
+  labels:
+    app: frontend
+    app.kubernetes.io/name: alghazaly-frontend
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP

@@ -1,0 +1,29 @@
+# Al-Ghazaly Auto Parts - Terraform Variables Example
+# Copy this file to terraform.tfvars and fill in your values
+
+# AWS Configuration
+aws_region = "me-south-1"  # Bahrain region for Middle East proximity
+
+# Environment
+environment = "production"  # production, staging, or development
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+
+# EKS Configuration
+cluster_version    = "1.29"
+node_instance_types = ["t3.medium", "t3a.medium"]
+node_desired_size  = 3
+node_min_size      = 2
+node_max_size      = 6
+
+# DocumentDB Configuration
+mongodb_instance_class   = "db.t3.medium"
+mongodb_master_username  = "admin"
+mongodb_master_password  = "CHANGE_THIS_SECURE_PASSWORD_123!"
+
+# Domain
+domain_name = "alghazaly.com"
+
+# Monitoring
+enable_monitoring = true
