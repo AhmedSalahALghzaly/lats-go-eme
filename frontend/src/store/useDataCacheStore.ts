@@ -148,6 +148,30 @@ interface DataCacheState {
   // Smart Cache Cleanup
   purgeOldQueueItems: (maxAgeDays?: number, maxRetries?: number) => number;
   cleanupAfterSync: () => void;
+  
+  // Aggressive Purging (Zero-Waste Policy)
+  purgeDeletedItems: (serverIds: { [resourceType: string]: string[] }) => {
+    purgedCounts: { [resourceType: string]: number };
+    totalPurged: number;
+  };
+  
+  // Single Item Operations (for real-time sync)
+  addProduct: (product: any) => void;
+  updateProductById: (productId: string, updates: any) => void;
+  removeProductById: (productId: string) => void;
+  
+  addCategory: (category: any) => void;
+  removeCategoryById: (categoryId: string) => void;
+  
+  addProductBrand: (brand: any) => void;
+  removeProductBrandById: (brandId: string) => void;
+  
+  addCarBrand: (brand: any) => void;
+  removeCarBrandById: (brandId: string) => void;
+  
+  addCarModel: (model: any) => void;
+  updateCarModelById: (modelId: string, updates: any) => void;
+  removeCarModelById: (modelId: string) => void;
 
   // Snapshot Actions
   createSnapshot: (description: string) => string;
