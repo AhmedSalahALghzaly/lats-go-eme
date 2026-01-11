@@ -129,11 +129,6 @@ export default function ProductBrandsAdmin() {
       showToast(language === 'ar' ? 'فشل في حذف الماركة' : 'Failed to delete brand', 'error');
     }
   };
-      fetchBrands();
-    } catch (error) {
-      console.error('Error deleting brand:', error);
-    }
-  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
