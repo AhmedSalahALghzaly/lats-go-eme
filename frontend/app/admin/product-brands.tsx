@@ -76,18 +76,26 @@ export default function ProductBrandsAdmin() {
     setSaving(true);
     setError('');
 
-    try {
-      await productBrandsApi.create({
-        name: name.trim(),
-        name_ar: nameAr.trim(),
-        logo: logoImage || null,
-        country_of_origin: countryOfOrigin.trim() || null,
-        country_of_origin_ar: countryOfOriginAr.trim() || null,
-      });
+    const brandData = {
+      name: name.trim(),
+      name_ar: nameAr.trim(),
+      logo: logoImage || null,
+      country_of_origin: countryOfOrigin.trim() || null,
+      country_of_origin_ar: countryOfOriginAr.trim() || null,
+    };
 
-      showToast(language === 'ar' ? 'تم إضافة الماركة بنجاح' : 'Brand created successfully', 'success');
-      resetForm();
-      fetchBrands();
+    try {
+      // Use optimistic update via AdminSyncService
+      const result = await adminSync.createProductBrand(brandData);
+      
+      if (result.success) {
+        showToast(language === 'ar' ? 'تم إضافة الماركة بنجاح' : 'Brand created successfully', 'success');
+        resetForm();
+        // Refresh to get server data with ID
+        fetchBrands();
+      } else {
+        showToast(result.error || (language === 'ar' ? 'فشل في حفظ الماركة' : 'Failed to save brand'), 'error');
+      }
     } catch (error: any) {
       showToast(language === 'ar' ? 'فشل في حفظ الماركة' : 'Failed to save brand', 'error');
     } finally {
@@ -96,8 +104,31 @@ export default function ProductBrandsAdmin() {
   };
 
   const handleDelete = async (id: string) => {
+    // Optimistic delete - remove from UI immediately
+    const brandToDelete = brands.find(b => b.id === id);
+    setBrands(prev => prev.filter(b => b.id !== id));
+    
     try {
-      await productBrandsApi.delete(id);
+      const result = await adminSync.deleteProductBrand(id);
+      
+      if (!result.success) {
+        // Rollback - re-add the brand
+        if (brandToDelete) {
+          setBrands(prev => [...prev, brandToDelete]);
+        }
+        showToast(result.error || (language === 'ar' ? 'فشل في حذف الماركة' : 'Failed to delete brand'), 'error');
+      } else {
+        showToast(language === 'ar' ? 'تم حذف الماركة بنجاح' : 'Brand deleted successfully', 'success');
+      }
+    } catch (error) {
+      // Rollback on error
+      if (brandToDelete) {
+        setBrands(prev => [...prev, brandToDelete]);
+      }
+      console.error('Error deleting brand:', error);
+      showToast(language === 'ar' ? 'فشل في حذف الماركة' : 'Failed to delete brand', 'error');
+    }
+  };
       fetchBrands();
     } catch (error) {
       console.error('Error deleting brand:', error);
