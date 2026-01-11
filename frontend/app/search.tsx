@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,8 @@ import { ProductCard } from '../src/components/ProductCard';
 import { useTheme } from '../src/hooks/useTheme';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { useAppStore } from '../src/store/appStore';
-import { productsApi, carBrandsApi, carModelsApi, productBrandsApi, categoriesApi, cartApi } from '../src/services/api';
+import { useInfiniteProducts } from '../src/hooks/useInfiniteProducts';
+import { carBrandsApi, carModelsApi, productBrandsApi, categoriesApi, cartApi } from '../src/services/api';
 
 // Constants for responsive grid layout
 const HORIZONTAL_PADDING = 24; // Total horizontal padding (12 left + 12 right)
