@@ -226,13 +226,27 @@ export default function ProductsAdmin() {
     if (!productToDelete) return;
 
     setDeleting(true);
+    
+    // Optimistic delete - remove from local state immediately
+    setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
+    
     try {
-      await productsApi.delete(productToDelete.id);
+      const result = await adminSync.deleteProduct(productToDelete.id);
+      
+      if (result.success) {
+        showToast(language === 'ar' ? 'تم حذف المنتج بنجاح' : 'Product deleted successfully', 'success');
+      } else {
+        // Rollback - re-add the product
+        setProducts(prev => [productToDelete, ...prev]);
+        showToast(result.error || 'Failed to delete product', 'error');
+      }
+      
       setShowDeleteModal(false);
       setProductToDelete(null);
-      fetchData();
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch (error: any) {
+      // Rollback on error
+      setProducts(prev => [productToDelete, ...prev]);
+      showToast(error.response?.data?.detail || 'Error deleting product', 'error');
     } finally {
       setDeleting(false);
     }
