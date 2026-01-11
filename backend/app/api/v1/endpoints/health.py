@@ -33,7 +33,7 @@ async def get_version():
 @router.get("/health")
 async def health_check():
     """Health check endpoint for deployment monitoring."""
-    db = get_db()
+    # db is imported from core.database
     try:
         await db.command("ping")
         mongo_status = "healthy"
