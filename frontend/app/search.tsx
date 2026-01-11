@@ -405,11 +405,16 @@ export default function SearchScreen() {
             key={numColumns} // Force re-render when columns change
             estimatedItemSize={250}
             contentContainerStyle={styles.listContent}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.5}
+            refreshing={isRefreshing}
+            onRefresh={refresh}
             ListHeaderComponent={
               <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-                {t('searchResults')}: {products.length}
+                {t('searchResults')}: {products.length} {total > products.length ? `/ ${total}` : ''}
               </Text>
             }
+            ListFooterComponent={renderFooter}
             renderItem={({ item }) => (
               <View style={[styles.cardWrapper, { width: cardWidth + CARD_MARGIN * 2 }]}>
                 <ProductCard
