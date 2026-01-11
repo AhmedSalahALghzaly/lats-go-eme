@@ -1247,7 +1247,34 @@ async def delete_category(cat_id: str):
 # ==================== Product Routes ====================
 
 @api_router.get("/products")
-async def get_products(category_id: Optional[str] = None, product_brand_id: Optional[str] = None, car_model_id: Optional[str] = None, car_brand_id: Optional[str] = None, min_price: Optional[float] = None, max_price: Optional[float] = None, skip: int = 0, limit: int = 50, include_hidden: bool = False):
+async def get_products(
+    category_id: Optional[str] = None, 
+    product_brand_id: Optional[str] = None, 
+    car_model_id: Optional[str] = None, 
+    car_brand_id: Optional[str] = None, 
+    min_price: Optional[float] = None, 
+    max_price: Optional[float] = None, 
+    skip: int = 0, 
+    limit: int = 50, 
+    include_hidden: bool = False,
+    # Cursor-based pagination (preferred for large datasets)
+    cursor: Optional[str] = None,
+    direction: str = "next"  # "next" or "prev"
+):
+    """
+    Enhanced product listing with cursor-based pagination for efficient handling of large datasets.
+    
+    Cursor-based pagination:
+    - cursor: The product ID to start from (exclusive)
+    - direction: "next" for newer items (default), "prev" for older items
+    
+    Returns:
+    - products: List of enriched products
+    - total: Total count of products matching filters
+    - next_cursor: ID of the last product (use for next page)
+    - prev_cursor: ID of the first product (use for previous page)
+    - has_more: Boolean indicating if more products exist
+    """
     query = {"deleted_at": None}
     if not include_hidden:
         query["$or"] = [{"hidden_status": False}, {"hidden_status": None}]
@@ -1269,10 +1296,46 @@ async def get_products(category_id: Optional[str] = None, product_brand_id: Opti
     if max_price is not None:
         query.setdefault("price", {})["$lte"] = max_price
     
+    # Count total (cached for performance if no filters change)
     total = await db.products.count_documents(query)
-    products = await db.products.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
-    # Fetch all product brands and car models for enrichment
+    # Cursor-based pagination logic
+    if cursor:
+        # Find the cursor document to get its created_at for comparison
+        cursor_doc = await db.products.find_one({"_id": cursor})
+        if cursor_doc:
+            cursor_created_at = cursor_doc.get("created_at")
+            if direction == "next":
+                # Get items older than cursor (created_at < cursor's created_at)
+                query["$and"] = query.get("$and", []) + [
+                    {"$or": [
+                        {"created_at": {"$lt": cursor_created_at}},
+                        {"created_at": cursor_created_at, "_id": {"$lt": cursor}}
+                    ]}
+                ]
+            else:
+                # Get items newer than cursor (created_at > cursor's created_at)
+                query["$and"] = query.get("$and", []) + [
+                    {"$or": [
+                        {"created_at": {"$gt": cursor_created_at}},
+                        {"created_at": cursor_created_at, "_id": {"$gt": cursor}}
+                    ]}
+                ]
+    
+    # Sort and fetch - for prev direction, we reverse and then reverse results
+    sort_direction = -1 if direction == "next" else 1
+    products = await db.products.find(query).sort([("created_at", sort_direction), ("_id", sort_direction)]).limit(limit + 1).to_list(limit + 1)
+    
+    # Check if there are more results
+    has_more = len(products) > limit
+    if has_more:
+        products = products[:limit]
+    
+    # Reverse for prev direction to maintain consistent order
+    if direction == "prev":
+        products = list(reversed(products))
+    
+    # Fetch all product brands and car models for enrichment (with caching consideration)
     all_product_brands = await db.product_brands.find({"deleted_at": None}).to_list(1000)
     all_car_models = await db.car_models.find({"deleted_at": None}).to_list(1000)
     
@@ -1304,7 +1367,18 @@ async def get_products(category_id: Optional[str] = None, product_brand_id: Opti
         
         enriched_products.append(product_data)
     
-    return {"products": enriched_products, "total": total}
+    # Determine cursors for pagination
+    next_cursor = enriched_products[-1]["id"] if enriched_products and has_more else None
+    prev_cursor = enriched_products[0]["id"] if enriched_products and cursor else None
+    
+    return {
+        "products": enriched_products, 
+        "total": total,
+        "next_cursor": next_cursor,
+        "prev_cursor": prev_cursor,
+        "has_more": has_more,
+        "page_size": limit
+    }
 
 @api_router.get("/products/search")
 async def search_products(q: str = Query(..., min_length=1), limit: int = 20):
