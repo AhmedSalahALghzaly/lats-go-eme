@@ -47,7 +47,7 @@ export default function CustomersScreen() {
       for (const customer of customersList) {
         const userId = customer.user_id || customer.id;
         try {
-          const ordersRes = await api.get(`/admin/customer/${userId}/orders`);
+          const ordersRes = await api.get(`/customers/admin/customer/${userId}/orders`);
           const orders = ordersRes.data?.orders || [];
           
           // Find most recent active order (not delivered/cancelled)
