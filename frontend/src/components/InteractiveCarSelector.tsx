@@ -173,8 +173,8 @@ export const InteractiveCarSelector: React.FC = () => {
         setCurrentIconIndex((prev) => (prev + 1) % VEHICLE_ICONS.length);
         // Animate the morph transition
         morphProgress.value = withSequence(
-          withTiming(1, { duration: 150, easing: Easing.out(Easing.cubic) }),
-          withTiming(0, { duration: 150, easing: Easing.in(Easing.cubic) })
+          withTiming(1, { duration: 150 }),
+          withTiming(0, { duration: 150 })
         );
       }, 2000);
       
