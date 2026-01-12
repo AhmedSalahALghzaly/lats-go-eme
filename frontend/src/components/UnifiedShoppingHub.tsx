@@ -516,7 +516,7 @@ export const UnifiedShoppingHub: React.FC<UnifiedShoppingHubProps> = ({
     { key: 'favorites', icon: 'heart', label: language === 'ar' ? 'المفضلة' : 'Favorites', count: favorites.length },
     { key: 'cart', icon: 'cart', label: language === 'ar' ? 'السلة' : 'Cart', count: getItemCount() },
     { key: 'checkout', icon: 'card', label: language === 'ar' ? 'الدفع' : 'Checkout', count: 0 },
-    { key: 'orders', icon: 'receipt', label: language === 'ar' ? 'الطلبات' : 'Orders', count: orders.filter((o: any) => o.status === 'pending').length },
+    { key: 'orders', icon: 'receipt', label: language === 'ar' ? 'الطلبات' : 'Orders', count: safeOrders.filter((o: any) => o.status === 'pending').length },
   ];
 
   // Loading state
