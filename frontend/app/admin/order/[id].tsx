@@ -144,7 +144,7 @@ export default function OrderDetailAdmin() {
 
     setApplyingDiscount(true);
     try {
-      const response = await api.patch(`/orders/${id}/discount`, { discount: discountAmount });
+      const response = await api.patch(`/orders/${orderId}/discount`, { discount: discountAmount });
       setOrder((prev) => ({
         ...prev,
         discount: discountAmount,
@@ -164,7 +164,7 @@ export default function OrderDetailAdmin() {
   const clearDiscount = async () => {
     setApplyingDiscount(true);
     try {
-      const response = await api.patch(`/orders/${id}/discount`, { discount: 0 });
+      const response = await api.patch(`/orders/${orderId}/discount`, { discount: 0 });
       setOrder((prev) => ({
         ...prev,
         discount: 0,
