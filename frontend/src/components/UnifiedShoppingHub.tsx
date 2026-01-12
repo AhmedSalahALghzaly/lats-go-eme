@@ -1206,11 +1206,11 @@ export const UnifiedShoppingHub: React.FC<UnifiedShoppingHubProps> = ({
                 {language === 'ar' ? 'سجل الطلبات' : 'Order History'}
               </Text>
               <View style={[styles.countBadge, { backgroundColor: NEON_NIGHT_THEME.primary }]}>
-                <Text style={styles.countBadgeText}>{orders.length}</Text>
+                <Text style={styles.countBadgeText}>{safeOrders.length}</Text>
               </View>
             </View>
 
-            {orders.length === 0 ? (
+            {safeOrders.length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="receipt-outline" size={48} color={colors.border} />
                 <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
