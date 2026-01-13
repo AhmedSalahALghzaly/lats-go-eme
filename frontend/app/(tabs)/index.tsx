@@ -15,6 +15,7 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { Header } from '../../src/components/Header';
 import { CategoryCard } from '../../src/components/CategoryCard';
 import { DynamicOfferSlider } from '../../src/components/DynamicOfferSlider';
