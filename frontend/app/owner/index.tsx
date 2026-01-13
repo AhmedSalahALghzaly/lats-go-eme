@@ -55,9 +55,9 @@ export default function OwnerDashboard() {
   const storedMood = useColorMood();
   const language = useAppStore((state) => state.language);
   const user = useAppStore((state) => state.user);
-  const orders = useAppStore((state) => state.orders);
-  const customers = useAppStore((state) => state.customers);
-  const products = useAppStore((state) => state.products);
+  const orders = useAppStore((state) => state.orders) || [];
+  const customers = useAppStore((state) => state.customers) || [];
+  const products = useAppStore((state) => state.products) || [];
   const setOrderFilter = useAppStore((state) => state.setOrderFilter);
   const setGlobalPartners = useAppStore((state) => state.setPartners);
   
