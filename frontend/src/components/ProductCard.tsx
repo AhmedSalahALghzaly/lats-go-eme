@@ -447,21 +447,24 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     marginBottom: 6,
-    gap: 2,
+    gap: 3,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   detailRowRTL: {
     flexDirection: 'row-reverse',
   },
   detailText: {
-    fontSize: 9,
+    fontSize: 10,
     flex: 1,
   },
   brandText: {
+    fontWeight: '600',
+  },
+  carModelText: {
     fontWeight: '600',
   },
   quantityRow: {
