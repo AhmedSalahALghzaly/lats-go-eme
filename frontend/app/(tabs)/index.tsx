@@ -365,6 +365,14 @@ export default function HomeScreen() {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+      {/* BlurView overlay for frosted glass effect - blurexpo */}
+      {Platform.OS !== 'web' && (
+        <BlurView
+          intensity={15}
+          tint="dark"
+          style={[StyleSheet.absoluteFill, styles.blurOverlay]}
+        />
+      )}
       {/* Glass overlay effect */}
       <View style={styles.glassOverlay} />
       
