@@ -1,7 +1,7 @@
 /**
  * OrderStatusIndicator - Real-time animated status indicator per customer row
  * Shows the status of the customer's most recent active order
- * Uses react-native-reanimated for pulse and glow effects
+ * Uses react-native-reanimated for high-performance pulse and glow effects
  */
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -28,33 +28,42 @@ const STATUS_CONFIG = {
   'cancelled': { color: '#6B7280', pulse: false, label: 'Cancelled' },
 };
 
-export const OrderStatusIndicator = ({
+interface OrderStatusIndicatorProps {
+  status?: string;
+  activeOrderCount?: number;
+  size?: number;
+}
+
+export const OrderStatusIndicator: React.FC<OrderStatusIndicatorProps> = ({
   status = 'no_active_order',
   activeOrderCount = 0,
   size = 28,
 }) => {
   const pulseAnim = useSharedValue(1);
   const glowAnim = useSharedValue(0);
-  const arrowAnim = useSharedValue(0);
+  const arrowAnim = useSharedValue(1);
 
   const config = STATUS_CONFIG[status] || STATUS_CONFIG['no_active_order'];
   const shouldPulse = config.pulse;
   const hasMultipleOrders = activeOrderCount > 1;
 
-  // Start pulse animation
+  // Calculate centered dimensions for the multi-order indicator
+  const multiIndicatorSize = size * 0.5;
+
+  // Start pulse animation with high-performance withRepeat
   useEffect(() => {
     if (shouldPulse) {
-      // Pulse scale animation
+      // Pulse scale animation - smooth 60fps using withRepeat
       pulseAnim.value = withRepeat(
         withSequence(
           withTiming(1.3, { duration: 600, easing: Easing.inOut(Easing.ease) }),
           withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) })
         ),
-        -1,
+        -1, // Infinite repeat
         false
       );
       
-      // Glow animation
+      // Glow animation - synchronized with pulse
       glowAnim.value = withRepeat(
         withSequence(
           withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }),
@@ -69,17 +78,19 @@ export const OrderStatusIndicator = ({
     }
   }, [shouldPulse]);
 
-  // Arrow pulse animation for multiple orders
+  // Arrow pulse animation for multiple orders indicator
   useEffect(() => {
     if (hasMultipleOrders) {
       arrowAnim.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 500 }),
-          withTiming(0.3, { duration: 500 })
+          withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 500, easing: Easing.inOut(Easing.ease) })
         ),
         -1,
         false
       );
+    } else {
+      arrowAnim.value = 1;
     }
   }, [hasMultipleOrders]);
 
@@ -113,7 +124,7 @@ export const OrderStatusIndicator = ({
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { width: size, height: size }]}>
       {/* Main Status Indicator */}
       <Animated.View
         style={[
@@ -142,20 +153,20 @@ export const OrderStatusIndicator = ({
         />
       </Animated.View>
 
-      {/* Multiple Orders Indicator - Centered within main indicator */}
+      {/* Multiple Orders Indicator - Perfectly centered using flexbox */}
       {hasMultipleOrders && (
         <Animated.View
           style={[
             styles.multiOrderIndicator,
             {
-              width: size * 0.5,
-              height: size * 0.5,
-              borderRadius: size * 0.25,
+              width: multiIndicatorSize,
+              height: multiIndicatorSize,
+              borderRadius: multiIndicatorSize / 2,
             },
             arrowPulseStyle,
           ]}
         >
-          <Ionicons name="chevron-up" size={size * 0.35} color={config.color} />
+          <Ionicons name="chevron-up" size={multiIndicatorSize * 0.7} color={config.color} />
         </Animated.View>
       )}
     </View>
@@ -189,10 +200,9 @@ const styles = StyleSheet.create({
     elevation: 6,
     borderWidth: 1.5,
     borderColor: 'rgba(0,0,0,0.15)',
-    // Centered within the indicator
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -6 }, { translateY: -6 }],
+    // Centered using absolute positioning without hardcoded offsets
+    // The parent container has alignItems/justifyContent: 'center'
+    // so this positions correctly in the center
   },
 });
 
