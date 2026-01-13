@@ -95,17 +95,14 @@ const CategoryCardComponent: React.FC<CategoryCardProps> = ({ category, size = '
     >
       <View style={iconContainerStyle}>
         {hasImage ? (
-          <Image
+          <RNImage
             source={{ uri: category.image_data }}
             style={{
               width: containerSize,
               height: containerSize,
               borderRadius: containerSize / 2,
             }}
-            contentFit="cover"
-            backgroundColor="transparent"
-            cachePolicy="disk"
-            transition={200}
+            resizeMode="cover"
           />
         ) : (
           <MaterialCommunityIcons
