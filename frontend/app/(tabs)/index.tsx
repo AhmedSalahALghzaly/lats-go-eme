@@ -673,6 +673,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  blurBackgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  blurOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
