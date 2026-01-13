@@ -699,6 +699,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a1628',
   },
+  blurOverlay: {
+    zIndex: 0,
+  },
   glassOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
