@@ -24,8 +24,13 @@ interface ProductCardProps {
     manufacturer_country?: string;
     manufacturer_country_ar?: string;
     sku?: string;
+    // Car compatibility fields - format: "Brand Model Year"
     compatible_car_model?: string;
     compatible_car_model_ar?: string;
+    compatible_car_brand?: string;
+    compatible_car_brand_ar?: string;
+    compatible_car_year_from?: number;
+    compatible_car_year_to?: number;
     compatible_car_models_count?: number;
   };
   onAddToCart?: (quantity: number) => void;
