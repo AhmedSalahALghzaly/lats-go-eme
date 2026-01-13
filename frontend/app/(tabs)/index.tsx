@@ -11,8 +11,10 @@ import {
   Animated,
   Keyboard,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../../src/components/Header';
