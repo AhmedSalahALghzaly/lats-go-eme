@@ -162,9 +162,11 @@ async def get_all_products():
     
     all_product_brands = await db.product_brands.find({"deleted_at": None}).to_list(1000)
     all_car_models = await db.car_models.find({"deleted_at": None}).to_list(1000)
+    all_car_brands = await db.car_brands.find({"deleted_at": None}).to_list(1000)
     
     brand_map = {b["_id"]: serialize_doc(b) for b in all_product_brands}
     car_model_map = {m["_id"]: serialize_doc(m) for m in all_car_models}
+    car_brand_map = {b["_id"]: serialize_doc(b) for b in all_car_brands}
     
     enriched_products = []
     for p in products:
@@ -184,6 +186,15 @@ async def get_all_products():
                 product_data["compatible_car_model"] = car_model.get("name", "")
                 product_data["compatible_car_model_ar"] = car_model.get("name_ar", "")
                 product_data["compatible_car_models_count"] = len(p["car_model_ids"])
+                # Add car brand info
+                car_brand_id = car_model.get("brand_id")
+                if car_brand_id and car_brand_id in car_brand_map:
+                    car_brand = car_brand_map[car_brand_id]
+                    product_data["compatible_car_brand"] = car_brand.get("name", "")
+                    product_data["compatible_car_brand_ar"] = car_brand.get("name_ar", "")
+                # Add year range
+                product_data["compatible_car_year_from"] = car_model.get("year_start")
+                product_data["compatible_car_year_to"] = car_model.get("year_end")
         
         enriched_products.append(product_data)
     
