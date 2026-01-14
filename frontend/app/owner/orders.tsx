@@ -37,9 +37,12 @@ export default function OrdersScreen() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const language = useAppStore((state) => state.language);
-  const orders = useAppStore((state) => state.orders);
+  const storeOrders = useAppStore((state) => state.orders);
   const setOrders = useAppStore((state) => state.setOrders);
   const isRTL = language === 'ar';
+
+  // CRITICAL FIX: Ensure orders is always an array to prevent "orders is not iterable" error
+  const orders = Array.isArray(storeOrders) ? storeOrders : [];
 
   // Get initial filter from URL params
   const initialFilter = (params.filter as FilterType) || 'all';
