@@ -198,7 +198,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: aspectRatio,
-        quality: 1, // CRITICAL: Use full quality to preserve PNG alpha channel
+        quality: 1, // Full quality
         base64: true,
       });
 
@@ -206,12 +206,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         const asset = result.assets[0];
         let imageUrl = '';
         
-        if (asset.uri) {
-          // Apply compression for images > 1MB, preserve PNG format
-          imageUrl = await processImageWithCompression(asset.uri, asset.mimeType || 'image/jpeg');
-        } else if (asset.base64) {
-          const mimeType = asset.mimeType || 'image/jpeg';
+        // CRITICAL FIX: Use original image directly without compression
+        if (asset.base64) {
+          const mimeType = asset.mimeType || 'image/png'; // Default to PNG
           imageUrl = `data:${mimeType};base64,${asset.base64}`;
+          console.log('[ImageUploader] Camera: Using original image, mime:', mimeType);
+        } else if (asset.uri) {
+          imageUrl = asset.uri;
         }
 
         if (imageUrl) {
