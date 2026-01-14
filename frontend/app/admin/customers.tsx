@@ -57,56 +57,67 @@ export default function CustomersAdmin() {
       setCustomers(customersList);
       console.log('[CustomersAdmin] Fetched customers:', customersList.length);
 
-      // Fetch pending order counts and status for each customer
+      // Fetch order status for each customer - CRITICAL: Build status map correctly
+      const statusResults = await Promise.all(
+        customersList.map(async (customer: any) => {
+          const userId = customer.id;
+          if (!userId) return { userId, count: 0, status: 'no_active_order', activeCount: 0 };
+          
+          try {
+            // Fetch orders for this customer
+            const ordersRes = await api.get(`/customers/admin/customer/${userId}/orders`);
+            const orders = ordersRes.data?.orders || [];
+            console.log(`[CustomersAdmin] Orders for ${userId}:`, orders.length, orders.map((o: any) => o.status));
+            
+            // Active order statuses that should trigger pulsing indicator
+            const activeStatuses = ['pending', 'confirmed', 'preparing', 'shipped', 'out_for_delivery'];
+            const activeOrders = orders.filter((o: any) => activeStatuses.includes(o.status));
+            
+            if (activeOrders.length > 0) {
+              // Sort by newest first
+              activeOrders.sort((a: any, b: any) => 
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              );
+              console.log(`[CustomersAdmin] Customer ${userId} has ACTIVE status:`, activeOrders[0].status, 'count:', activeOrders.length);
+              return {
+                userId,
+                count: activeOrders.length,
+                status: activeOrders[0].status,
+                activeCount: activeOrders.length,
+              };
+            } else {
+              const latestOrder = orders[0];
+              return {
+                userId,
+                count: 0,
+                status: latestOrder?.status || 'no_active_order',
+                activeCount: 0,
+              };
+            }
+          } catch (e) {
+            console.error(`[CustomersAdmin] Error fetching orders for ${userId}:`, e);
+            return { userId, count: 0, status: 'no_active_order', activeCount: 0 };
+          }
+        })
+      );
+
+      // Build maps from results
       const counts: Record<string, number> = {};
       const statusMap: Record<string, { status: string; activeCount: number }> = {};
       
-      // CRITICAL FIX: Use Promise.all for parallel fetching to improve performance
-      await Promise.all(customersList.map(async (customer: any) => {
-        // Use customer.id as the user_id (backend returns 'id' from serialize_doc)
-        const userId = customer.id;
-        if (!userId) return;
-        
-        try {
-          const countRes = await ordersApi.getPendingCount(userId);
-          counts[userId] = countRes.data?.count || 0;
-          
-          // Also fetch order status info
-          const ordersRes = await api.get(`/customers/admin/customer/${userId}/orders`);
-          const orders = ordersRes.data?.orders || [];
-          console.log(`[CustomersAdmin] Orders for ${userId}:`, orders.length);
-          
-          // Active order statuses that should trigger pulsing indicator
-          const activeStatuses = ['pending', 'confirmed', 'preparing', 'shipped', 'out_for_delivery'];
-          const activeOrders = orders.filter((o: any) => activeStatuses.includes(o.status));
-          
-          if (activeOrders.length > 0) {
-            // Sort by newest first
-            activeOrders.sort((a: any, b: any) => 
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            statusMap[userId] = {
-              status: activeOrders[0].status,
-              activeCount: activeOrders.length,
-            };
-            console.log(`[CustomersAdmin] Customer ${userId} has active status:`, activeOrders[0].status);
-          } else {
-            const latestOrder = orders[0];
-            statusMap[userId] = {
-              status: latestOrder?.status || 'no_active_order',
-              activeCount: 0,
-            };
-          }
-        } catch (e) {
-          console.error(`[CustomersAdmin] Error fetching orders for ${userId}:`, e);
-          counts[userId] = 0;
-          statusMap[userId] = { status: 'no_active_order', activeCount: 0 };
+      statusResults.forEach((result) => {
+        if (result.userId) {
+          counts[result.userId] = result.count;
+          statusMap[result.userId] = {
+            status: result.status,
+            activeCount: result.activeCount,
+          };
         }
-      }));
+      });
       
+      console.log('[CustomersAdmin] Final status map:', JSON.stringify(statusMap));
       setPendingOrderCounts(counts);
       setCustomerOrderStatus(statusMap);
-      console.log('[CustomersAdmin] Status map:', statusMap);
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
