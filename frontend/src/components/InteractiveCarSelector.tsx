@@ -1115,9 +1115,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   placeholderIcon: {
-    width: 77,
-    height: 77,
-    borderRadius: 37,
+    width: 90,
+    height: 90,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 1,
@@ -1125,7 +1125,7 @@ const styles = StyleSheet.create({
   gridItemText: {
     fontSize: 13,
     fontWeight: '700',
-    marginTop: 5,
+    marginTop: 1,
     textAlign: 'center',
   },
   gridItemSubtext: {
