@@ -1087,14 +1087,14 @@ const styles = StyleSheet.create({
   gridItem: {
     // Dynamic width: 4 items per row - user specified values
     width: (SCREEN_WIDTH - 31 - 39) / 4,
-    minWidth: 70,
-    maxWidth: 110,
-    height: 113,
+    minWidth: 75,
+    maxWidth: 115,
+    height: 120,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    padding: 6,
+    padding: 4,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
