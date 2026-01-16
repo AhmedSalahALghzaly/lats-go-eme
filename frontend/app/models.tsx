@@ -242,6 +242,15 @@ export default function AllModelsScreen() {
                     {model.year_start} - {model.year_end}
                   </Text>
                 )}
+                {/* Chassis Number Display */}
+                {model.chassis_number && (
+                  <View style={[styles.chassisInfo, { backgroundColor: colors.secondary + '15' }]}>
+                    <Ionicons name="key-outline" size={12} color={colors.secondary} />
+                    <Text style={[styles.chassisText, { color: colors.secondary }]}>
+                      {model.chassis_number}
+                    </Text>
+                  </View>
+                )}
                 {model.variants && model.variants.length > 0 && (
                   <View style={styles.variantsInfo}>
                     <Ionicons name="speedometer-outline" size={14} color={colors.secondary} />
