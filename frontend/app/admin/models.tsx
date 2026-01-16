@@ -30,6 +30,7 @@ export default function ModelsAdmin() {
   const [nameAr, setNameAr] = useState('');
   const [yearFrom, setYearFrom] = useState('');
   const [yearTo, setYearTo] = useState('');
+  const [chassisNumber, setChassisNumber] = useState('');
   const [modelImage, setModelImage] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState('');
 
