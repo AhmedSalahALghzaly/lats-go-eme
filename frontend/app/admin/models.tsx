@@ -562,6 +562,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   emptyText: { textAlign: 'center', padding: 20 },
+  helperText: { fontSize: 12, marginTop: 4 },
   listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1 },
   modelIcon: { width: 64, height: 64, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   modelThumb: { width: 64, height: 64, borderRadius: 12 },
