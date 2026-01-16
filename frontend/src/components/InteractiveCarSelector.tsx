@@ -1500,18 +1500,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chassisGridCardName: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     lineHeight: 14,
     textAlign: 'center',
   },
   chassisGridCardBrand: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
   },
   chassisGridCardYear: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -1525,7 +1525,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   chassisGridTagText: {
-    fontSize: 7,
+    fontSize: 8,
     fontWeight: '600',
   },
   gridContainer: {
