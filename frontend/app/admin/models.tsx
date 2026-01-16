@@ -158,6 +158,7 @@ export default function ModelsAdmin() {
       brand_id: selectedBrandId,
       year_start: yearFrom ? parseInt(yearFrom) : null,
       year_end: yearTo ? parseInt(yearTo) : null,
+      chassis_number: chassisNumber.trim() || null,
       image_url: modelImage || imageUrl.trim() || null,
     };
 
