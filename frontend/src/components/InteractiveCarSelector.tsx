@@ -933,16 +933,16 @@ export const InteractiveCarSelector: React.FC = () => {
             </Animated.View>
           )}
 
-          {/* Chassis Number Selector Button */}
+          {/* Chassis Number Selector Button - Electric Blue */}
           <AnimatedTouchable
             style={[
               styles.anchorButton,
               {
                 backgroundColor: selectorState === 'chassis_search'
-                  ? '#F59E0B'
+                  ? '#00A8FF'
                   : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                borderColor: '#F59E0B',
-                shadowColor: '#F59E0B',
+                borderColor: '#00A8FF',
+                shadowColor: '#00A8FF',
               },
               chassisGlowStyle,
             ]}
@@ -956,7 +956,7 @@ export const InteractiveCarSelector: React.FC = () => {
                 <MaterialCommunityIcons
                   name="barcode"
                   size={26}
-                  color={selectorState === 'chassis_search' ? '#FFF' : '#F59E0B'}
+                  color={'#00A8FF'}
                 />
               )}
             </Animated.View>
