@@ -334,7 +334,7 @@ export const InteractiveCarSelector: React.FC = () => {
     };
   }, [selectorState]);
 
-  // Chassis number animation - shifting VIN characters
+  // Chassis number animation - shifting VIN characters with electric blue glow
   useEffect(() => {
     let vinInterval: NodeJS.Timeout;
     
@@ -347,9 +347,40 @@ export const InteractiveCarSelector: React.FC = () => {
         );
       }, 800);
       
+      // Enhanced chassis glow animation - Electric blue pulsing
       chassisIconGlow.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 1200 }),
+          withTiming(1, { duration: 800 }),
+          withTiming(0.3, { duration: 800 })
+        ),
+        -1,
+        true
+      );
+      
+      // Barcode scan line animation - continuous sweep
+      barcodeScanAnim.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1500 }),
+          withTiming(0, { duration: 0 })
+        ),
+        -1,
+        false
+      );
+      
+      // Chassis button pulse animation
+      chassisPulseAnim.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 1000 }),
+          withTiming(1, { duration: 1000 })
+        ),
+        -1,
+        true
+      );
+      
+      // Glow intensity variation
+      chassisGlowIntensity.value = withRepeat(
+        withSequence(
+          withTiming(0.9, { duration: 1200 }),
           withTiming(0.4, { duration: 1200 })
         ),
         -1,
@@ -357,7 +388,11 @@ export const InteractiveCarSelector: React.FC = () => {
       );
     } else {
       cancelAnimation(chassisIconGlow);
+      cancelAnimation(barcodeScanAnim);
+      cancelAnimation(chassisPulseAnim);
+      cancelAnimation(chassisGlowIntensity);
       chassisIconGlow.value = withTiming(0.8, { duration: 300 });
+      chassisPulseAnim.value = withTiming(1, { duration: 200 });
     }
     
     return () => {
