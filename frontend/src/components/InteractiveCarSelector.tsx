@@ -809,32 +809,64 @@ export const InteractiveCarSelector: React.FC = () => {
           ]}
         />
 
-        {/* Dual Anchor Button Row */}
+        {/* Dual Anchor Button Row - RTL aware */}
         <View style={[styles.anchorRow, isRTL && styles.anchorRowRTL]}>
-          {/* Car Selector Button */}
-          <AnimatedTouchable
-            style={[
-              styles.anchorButton,
-              {
-                backgroundColor: selectorState === 'brands' || selectorState === 'models' || selectorState === 'products' 
-                  ? mood?.primary || colors.primary 
-                  : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                borderColor: mood?.primary || colors.primary,
-                shadowColor: mood?.primary || colors.primary,
-              },
-              iconGlowStyle,
-            ]}
-            onPress={handleCarAnchorPress}
-            activeOpacity={0.8}
-          >
-            <Animated.View style={[carRotationStyle, morphStyle]}>
-              <MaterialCommunityIcons
-                name={selectorState !== 'collapsed' && selectorState !== 'chassis_search' ? 'close' : currentIcon}
-                size={26}
-                color={selectorState === 'brands' || selectorState === 'models' || selectorState === 'products' ? '#FFF' : mood?.primary || colors.primary}
-              />
-            </Animated.View>
-          </AnimatedTouchable>
+          {/* Left Button: Car Selector (in LTR) / Chassis (in RTL) */}
+          {isRTL ? (
+            /* Chassis Button for RTL - shows on LEFT */
+            <AnimatedTouchable
+              style={[
+                styles.anchorButton,
+                {
+                  backgroundColor: selectorState === 'chassis_search'
+                    ? '#00A8FF'
+                    : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  borderColor: '#00A8FF',
+                  shadowColor: '#00A8FF',
+                },
+                chassisGlowStyle,
+              ]}
+              onPress={handleChassisAnchorPress}
+              activeOpacity={0.8}
+            >
+              <Animated.View style={vinAnimStyle}>
+                {selectorState === 'chassis_search' ? (
+                  <Ionicons name="close" size={26} color="#FFF" />
+                ) : (
+                  <MaterialCommunityIcons
+                    name="barcode"
+                    size={26}
+                    color={'#00A8FF'}
+                  />
+                )}
+              </Animated.View>
+            </AnimatedTouchable>
+          ) : (
+            /* Car Selector Button for LTR - shows on LEFT */
+            <AnimatedTouchable
+              style={[
+                styles.anchorButton,
+                {
+                  backgroundColor: selectorState === 'brands' || selectorState === 'models' || selectorState === 'products' 
+                    ? mood?.primary || colors.primary 
+                    : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  borderColor: mood?.primary || colors.primary,
+                  shadowColor: mood?.primary || colors.primary,
+                },
+                iconGlowStyle,
+              ]}
+              onPress={handleCarAnchorPress}
+              activeOpacity={0.8}
+            >
+              <Animated.View style={[carRotationStyle, morphStyle]}>
+                <MaterialCommunityIcons
+                  name={selectorState !== 'collapsed' && selectorState !== 'chassis_search' ? 'close' : currentIcon}
+                  size={26}
+                  color={selectorState === 'brands' || selectorState === 'models' || selectorState === 'products' ? '#FFF' : mood?.primary || colors.primary}
+                />
+              </Animated.View>
+            </AnimatedTouchable>
+          )}
 
           {/* Center Content - Hints or Breadcrumbs */}
           {selectorState === 'collapsed' ? (
