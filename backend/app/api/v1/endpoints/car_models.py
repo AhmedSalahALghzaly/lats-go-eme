@@ -55,6 +55,16 @@ async def get_car_model(model_id: str):
     if brand_id:
         brand = await db.car_brands.find_one({"_id": brand_id})
         model_data["brand"] = serialize_doc(brand) if brand else None
+        
+        # Fetch distributor linked to this car brand
+        if brand and brand.get("distributor_id"):
+            distributor = await db.distributors.find_one({
+                "_id": brand["distributor_id"], 
+                "deleted_at": None
+            })
+            if distributor:
+                model_data["distributor"] = serialize_doc(distributor)
+    
     products = await db.products.find({
         "$or": [
             {"car_model_ids": model_id},
