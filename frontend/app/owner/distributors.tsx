@@ -91,6 +91,17 @@ export default function DistributorsScreen() {
     fetchDistributors();
   }, []);
 
+  // Handle URL params for direct navigation to profile
+  useEffect(() => {
+    if (params.viewMode === 'profile' && params.id) {
+      const distributor = distributors.find((d: any) => d.id === params.id);
+      if (distributor) {
+        setSelectedDistributor(distributor);
+        setViewMode('profile');
+      }
+    }
+  }, [params.viewMode, params.id, distributors]);
+
   const resetForm = () => {
     setFormData({
       name: '',
