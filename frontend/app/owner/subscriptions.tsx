@@ -36,7 +36,7 @@ export default function SubscriptionsScreen() {
   const language = useAppStore((state) => state.language);
   const subscribers = useAppStore((state) => state.subscribers);
   const setSubscribers = useAppStore((state) => state.setSubscribers);
-  const customers = useAppStore((state) => state.customers);
+  const customers = useAppStore((state) => state.customers) || [];
   const isRTL = language === 'ar';
 
   const [activeTab, setActiveTab] = useState<TabType>('subscribers');
@@ -73,16 +73,18 @@ export default function SubscriptionsScreen() {
     fetchData();
   }, []);
 
-  // Find customer by email or phone
+  // Find customer by email or phone - with safety check
   const findCustomerByContact = (email?: string, phone?: string) => {
+    if (!Array.isArray(customers)) return null;
     return customers.find((c: any) => 
       (email && c.email?.toLowerCase() === email?.toLowerCase()) ||
       (phone && c.phone === phone)
     );
   };
 
-  // Navigate to customer profile
-  const navigateToCustomer = (customerId: string) => {
+  // Navigate to customer personal profile page
+  const navigateToCustomerProfile = (customerId: string) => {
+    // Navigate to customer profile in owner/customers with profile view
     router.push(`/owner/customers?viewMode=profile&id=${customerId}`);
   };
 
@@ -90,9 +92,8 @@ export default function SubscriptionsScreen() {
   const handleSubscriberPress = (sub: any) => {
     const customer = findCustomerByContact(sub.email, sub.phone);
     if (customer) {
-      navigateToCustomer(customer.id);
+      navigateToCustomerProfile(customer.id);
     } else {
-      // If no customer found, show an alert or do nothing
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
@@ -108,27 +109,17 @@ export default function SubscriptionsScreen() {
   const handleAddSubscriber = async () => {
     if (!newEmail.trim()) return;
 
-    const tempId = `temp-${Date.now()}`;
-    const optimisticSub = {
-      id: tempId,
-      email: newEmail.trim(),
-      created_at: new Date().toISOString(),
-    };
-
-    // Optimistic update
-    setSubscribers([optimisticSub, ...subscribers]);
     setShowAddModal(false);
     setNewEmail('');
-    setShowConfetti(true);
 
     try {
       setLoading(true);
       const res = await subscriberApi.create(newEmail.trim());
-      setSubscribers([res.data, ...subscribers.filter((s: any) => s.id !== tempId)]);
+      // Add to list and refresh
+      await fetchData();
+      setShowConfetti(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
-      // Rollback
-      setSubscribers(subscribers.filter((s: any) => s.id !== tempId));
       setError(err.response?.data?.detail || 'Failed to add subscriber');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
@@ -154,30 +145,28 @@ export default function SubscriptionsScreen() {
     }
   };
 
-  // Approve request
+  // Approve request - properly add to subscribers
   const handleApproveRequest = async (reqId: string) => {
     const request = requests.find((r: any) => r.id === reqId);
     if (!request) return;
 
-    // Optimistic update
-    setRequests(requests.map((r: any) => r.id === reqId ? { ...r, status: 'approved' } : r));
-    setShowConfetti(true);
-
     try {
+      // Call approve API
       await subscriptionRequestApi.approve(reqId);
-      // Add as subscriber
-      const newSub = {
-        id: `sub-${Date.now()}`,
-        email: request.customer_email,
-        name: request.customer_name,
-        created_at: new Date().toISOString(),
-      };
-      setSubscribers([newSub, ...subscribers]);
+      
+      // Update request status locally
+      setRequests(requests.map((r: any) => 
+        r.id === reqId ? { ...r, status: 'approved' } : r
+      ));
+      
+      // Refresh data to get the new subscriber
+      await fetchData();
+      
+      setShowConfetti(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
-      // Rollback
-      setRequests(requests.map((r: any) => r.id === reqId ? { ...r, status: 'pending' } : r));
       setError(err.response?.data?.detail || 'Failed to approve request');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
@@ -311,7 +300,7 @@ export default function SubscriptionsScreen() {
                           <Ionicons name="card" size={24} color="#8B5CF6" />
                         </View>
                         <View style={styles.info}>
-                          <Text style={styles.name}>{sub.name || sub.email}</Text>
+                          <Text style={styles.name}>{sub.name || sub.email || sub.phone}</Text>
                           <Text style={styles.date}>
                             {isRTL ? 'منذ' : 'Since'} {new Date(sub.created_at).toLocaleDateString()}
                           </Text>
@@ -371,20 +360,23 @@ export default function SubscriptionsScreen() {
                               <Ionicons name="checkmark" size={18} color="#FFF" />
                             </TouchableOpacity>
                           )}
-                          {customer && (
-                            <TouchableOpacity 
-                              style={styles.profileButton}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                navigateToCustomer(customer.id);
-                              }}
-                            >
-                              <Ionicons name="person" size={18} color="#FFF" />
-                            </TouchableOpacity>
-                          )}
-                          {req.status === 'approved' && !customer && (
+                          {/* Always show profile button for requests */}
+                          <TouchableOpacity 
+                            style={styles.profileButton}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              if (customer) {
+                                navigateToCustomerProfile(customer.id);
+                              } else {
+                                handleRequestPress(req);
+                              }
+                            }}
+                          >
+                            <Ionicons name="person" size={18} color="#FFF" />
+                          </TouchableOpacity>
+                          {req.status === 'approved' && (
                             <View style={styles.approvedBadge}>
-                              <Text style={styles.approvedText}>{isRTL ? 'موافق' : 'OK'}</Text>
+                              <Ionicons name="checkmark-circle" size={14} color="#10B981" />
                             </View>
                           )}
                         </View>
@@ -500,13 +492,13 @@ export default function SubscriptionsScreen() {
                   {renderDetailRow(
                     'calendar', 
                     isRTL ? 'تاريخ الطلب' : 'Request Date', 
-                    new Date(selectedRequest.created_at).toLocaleDateString('ar-EG', {
+                    selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleDateString('ar-EG', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
-                    })
+                    }) : '-'
                   )}
                 </>
               )}
@@ -569,7 +561,7 @@ const styles = StyleSheet.create({
   actionButtons: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   approveButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
   profileButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center' },
-  approvedBadge: { backgroundColor: 'rgba(16,185,129,0.3)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  approvedBadge: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(16,185,129,0.3)', alignItems: 'center', justifyContent: 'center' },
   approvedText: { fontSize: 12, color: '#10B981', fontWeight: '600' },
   emptyState: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { color: 'rgba(255,255,255,0.5)', fontSize: 16, marginTop: 16 },
