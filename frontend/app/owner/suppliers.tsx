@@ -221,125 +221,145 @@ export default function SuppliersScreen() {
     const displayDescription = isRTL && selectedSupplier.description_ar ? selectedSupplier.description_ar : selectedSupplier.description;
 
     return (
-      <View style={styles.container}>
-        <LinearGradient colors={['#0D9488', '#14B8A6', '#2DD4BF']} style={StyleSheet.absoluteFill} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}>
-          <View style={[styles.header, isRTL && styles.headerRTL]}>
-            <TouchableOpacity style={styles.backButton} onPress={() => { setViewMode('list'); setSelectedSupplier(null); router.setParams({ viewMode: undefined, id: undefined }); }}>
-              <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
+          {/* Header */}
+          <View style={[styles.profileHeader, isRTL && styles.headerRTL]}>
+            <TouchableOpacity 
+              style={[styles.profileBackButton, { backgroundColor: colors.surface }]} 
+              onPress={() => { setViewMode('list'); setSelectedSupplier(null); router.setParams({ viewMode: undefined, id: undefined }); }}
+            >
+              <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{displayName}</Text>
+            <Text style={[styles.profileHeaderTitle, { color: colors.text }]}>{displayName}</Text>
             {isOwnerOrAdmin && (
-              <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/owner/add-entity-form?entityType=supplier&id=${selectedSupplier.id}`)}>
+              <TouchableOpacity 
+                style={[styles.profileEditButton, { backgroundColor: colors.primary }]} 
+                onPress={() => router.push(`/owner/add-entity-form?entityType=supplier&id=${selectedSupplier.id}`)}
+              >
                 <Ionicons name="pencil" size={20} color="#FFF" />
               </TouchableOpacity>
             )}
           </View>
 
           {/* Profile Image */}
-          <View style={styles.profileImageContainer}>
+          <View style={styles.profileImageContainerThemed}>
             {selectedSupplier.profile_image ? (
-              <Image source={{ uri: selectedSupplier.profile_image }} style={styles.profileImage} />
+              <Image source={{ uri: selectedSupplier.profile_image }} style={styles.profileImageThemed} />
             ) : (
-              <View style={styles.profilePlaceholder}>
-                <Ionicons name="briefcase" size={60} color="#14B8A6" />
+              <View style={[styles.profilePlaceholderThemed, { backgroundColor: colors.surface }]}>
+                <Ionicons name="briefcase" size={60} color={colors.primary} />
               </View>
             )}
           </View>
 
           {/* Arabic Name (if available and different) */}
           {selectedSupplier.name_ar && selectedSupplier.name_ar !== selectedSupplier.name && (
-            <Text style={styles.arabicNameText}>{selectedSupplier.name_ar}</Text>
+            <Text style={[styles.arabicNameTextThemed, { color: colors.textSecondary }]}>{selectedSupplier.name_ar}</Text>
           )}
 
-          {/* Contact Info - ALL FIELDS */}
-          <View style={styles.infoCard}>
-            <BlurView intensity={15} tint="light" style={styles.infoBlur}>
-              <Text style={styles.infoSectionTitle}>{isRTL ? 'معلومات الاتصال' : 'Contact Information'}</Text>
-              
-              {/* Phone Numbers */}
-              {selectedSupplier.phone_numbers && selectedSupplier.phone_numbers.length > 0 ? (
-                selectedSupplier.phone_numbers.map((phone: string, index: number) => (
-                  <TouchableOpacity key={index} style={styles.infoRow} onPress={() => Linking.openURL(`tel:${phone}`)}>
-                    <Ionicons name="call" size={20} color="#14B8A6" />
-                    <Text style={styles.infoText}>{phone}</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#14B8A6" />
-                  </TouchableOpacity>
-                ))
-              ) : selectedSupplier.phone ? (
-                <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(`tel:${selectedSupplier.phone}`)}>
-                  <Ionicons name="call" size={20} color="#14B8A6" />
-                  <Text style={styles.infoText}>{selectedSupplier.phone}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#14B8A6" />
+          {/* Contact Info Card */}
+          <View style={[styles.infoCardThemed, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.infoSectionTitleThemed, { color: colors.textSecondary }]}>
+              {isRTL ? 'معلومات الاتصال' : 'Contact Information'}
+            </Text>
+            
+            {/* Phone Numbers */}
+            {selectedSupplier.phone_numbers && selectedSupplier.phone_numbers.length > 0 ? (
+              selectedSupplier.phone_numbers.map((phone: string, index: number) => (
+                <TouchableOpacity key={index} style={styles.infoRowThemed} onPress={() => Linking.openURL(`tel:${phone}`)}>
+                  <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                    <Ionicons name="call" size={18} color={colors.primary} />
+                  </View>
+                  <Text style={[styles.infoTextThemed, { color: colors.text }]}>{phone}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
-              ) : null}
+              ))
+            ) : selectedSupplier.phone ? (
+              <TouchableOpacity style={styles.infoRowThemed} onPress={() => Linking.openURL(`tel:${selectedSupplier.phone}`)}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="call" size={18} color={colors.primary} />
+                </View>
+                <Text style={[styles.infoTextThemed, { color: colors.text }]}>{selectedSupplier.phone}</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            ) : null}
 
-              {/* Email */}
-              {selectedSupplier.contact_email && (
-                <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(`mailto:${selectedSupplier.contact_email}`)}>
-                  <Ionicons name="mail" size={20} color="#14B8A6" />
-                  <Text style={styles.infoText}>{selectedSupplier.contact_email}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#14B8A6" />
-                </TouchableOpacity>
-              )}
+            {/* Email */}
+            {selectedSupplier.contact_email && (
+              <TouchableOpacity style={styles.infoRowThemed} onPress={() => Linking.openURL(`mailto:${selectedSupplier.contact_email}`)}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="mail" size={18} color={colors.primary} />
+                </View>
+                <Text style={[styles.infoTextThemed, { color: colors.text }]}>{selectedSupplier.contact_email}</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
 
-              {/* Website */}
-              {(selectedSupplier.website_url || selectedSupplier.website) && (
-                <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(selectedSupplier.website_url || selectedSupplier.website)}>
-                  <Ionicons name="globe" size={20} color="#14B8A6" />
-                  <Text style={[styles.infoText, { flex: 1 }]} numberOfLines={1}>{selectedSupplier.website_url || selectedSupplier.website}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#14B8A6" />
-                </TouchableOpacity>
-              )}
-            </BlurView>
+            {/* Website */}
+            {(selectedSupplier.website_url || selectedSupplier.website) && (
+              <TouchableOpacity style={styles.infoRowThemed} onPress={() => Linking.openURL(selectedSupplier.website_url || selectedSupplier.website)}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="globe" size={18} color={colors.primary} />
+                </View>
+                <Text style={[styles.infoTextThemed, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+                  {selectedSupplier.website_url || selectedSupplier.website}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Address Section */}
           {(selectedSupplier.address || selectedSupplier.address_ar) && (
-            <View style={styles.infoCard}>
-              <BlurView intensity={15} tint="light" style={styles.infoBlur}>
-                <Text style={styles.infoSectionTitle}>{isRTL ? 'العنوان' : 'Address'}</Text>
-                <View style={styles.infoRow}>
-                  <Ionicons name="location" size={20} color="#14B8A6" />
-                  <Text style={[styles.infoText, { flex: 1 }]}>{displayAddress}</Text>
+            <View style={[styles.infoCardThemed, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.infoSectionTitleThemed, { color: colors.textSecondary }]}>
+                {isRTL ? 'العنوان' : 'Address'}
+              </Text>
+              <View style={styles.infoRowThemed}>
+                <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="location" size={18} color={colors.primary} />
                 </View>
-                {/* Show both addresses if different */}
-                {selectedSupplier.address_ar && selectedSupplier.address && selectedSupplier.address !== selectedSupplier.address_ar && (
-                  <View style={[styles.infoRow, { marginTop: 8 }]}>
-                    <Ionicons name="location-outline" size={20} color="#14B8A6" />
-                    <Text style={[styles.infoText, { flex: 1, fontStyle: 'italic' }]}>
-                      {isRTL ? selectedSupplier.address : selectedSupplier.address_ar}
-                    </Text>
+                <Text style={[styles.infoTextThemed, { color: colors.text, flex: 1 }]}>{displayAddress}</Text>
+              </View>
+              {selectedSupplier.address_ar && selectedSupplier.address && selectedSupplier.address !== selectedSupplier.address_ar && (
+                <View style={[styles.infoRowThemed, { marginTop: 8 }]}>
+                  <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '10' }]}>
+                    <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
                   </View>
-                )}
-              </BlurView>
+                  <Text style={[styles.infoTextThemed, { color: colors.textSecondary, flex: 1, fontStyle: 'italic' }]}>
+                    {isRTL ? selectedSupplier.address : selectedSupplier.address_ar}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
           {/* Description Section */}
           {(selectedSupplier.description || selectedSupplier.description_ar) && (
-            <View style={styles.descriptionCard}>
-              <BlurView intensity={15} tint="light" style={styles.descriptionBlur}>
-                <Text style={styles.descriptionTitle}>{isRTL ? 'الوصف' : 'Description'}</Text>
-                <Text style={styles.descriptionText}>{displayDescription}</Text>
-                {/* Show both descriptions if different */}
-                {selectedSupplier.description_ar && selectedSupplier.description && selectedSupplier.description !== selectedSupplier.description_ar && (
-                  <Text style={[styles.descriptionText, { marginTop: 12, fontStyle: 'italic', opacity: 0.8 }]}>
-                    {isRTL ? selectedSupplier.description : selectedSupplier.description_ar}
-                  </Text>
-                )}
-              </BlurView>
+            <View style={[styles.infoCardThemed, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.infoSectionTitleThemed, { color: colors.textSecondary }]}>
+                {isRTL ? 'الوصف' : 'Description'}
+              </Text>
+              <Text style={[styles.descriptionTextThemed, { color: colors.text }]}>{displayDescription}</Text>
+              {selectedSupplier.description_ar && selectedSupplier.description && selectedSupplier.description !== selectedSupplier.description_ar && (
+                <Text style={[styles.descriptionTextThemed, { color: colors.textSecondary, marginTop: 12, fontStyle: 'italic' }]}>
+                  {isRTL ? selectedSupplier.description : selectedSupplier.description_ar}
+                </Text>
+              )}
             </View>
           )}
 
           {/* Slider Images Gallery */}
           {selectedSupplier.slider_images && selectedSupplier.slider_images.length > 0 && (
-            <View style={styles.gallerySection}>
-              <Text style={styles.brandsSectionTitle}>{isRTL ? 'معرض الصور' : 'Image Gallery'}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandsCarousel}>
+            <View style={styles.gallerySectionThemed}>
+              <Text style={[styles.sectionTitleThemed, { color: colors.text }]}>
+                {isRTL ? 'معرض الصور' : 'Image Gallery'}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScrollContent}>
                 {selectedSupplier.slider_images.map((img: string, index: number) => (
-                  <View key={index} style={styles.galleryImageContainer}>
-                    <Image source={{ uri: img }} style={styles.galleryImage} />
+                  <View key={index} style={[styles.galleryImageContainerThemed, { backgroundColor: colors.surface }]}>
+                    <Image source={{ uri: img }} style={styles.galleryImageThemed} />
                   </View>
                 ))}
               </ScrollView>
@@ -348,18 +368,18 @@ export default function SuppliersScreen() {
 
           {/* Linked Brands Carousel */}
           {linkedBrandObjects.length > 0 && (
-            <View style={styles.brandsSection}>
-              <Text style={styles.brandsSectionTitle}>{isRTL ? 'العلامات التجارية المرتبطة' : 'Linked Brands'}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandsCarousel}>
+            <View style={styles.brandsSectionThemed}>
+              <Text style={[styles.sectionTitleThemed, { color: colors.text }]}>
+                {isRTL ? 'العلامات التجارية المرتبطة' : 'Linked Brands'}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandsScrollContent}>
                 {linkedBrandObjects.map((brand: any) => (
-                  <TouchableOpacity key={brand.id} style={styles.brandCircle}>
-                    {brand.image ? (
-                      <Image source={{ uri: brand.image }} style={styles.brandImage} />
-                    ) : (
-                      <Ionicons name="pricetag" size={24} color="#14B8A6" />
-                    )}
-                    <Text style={styles.brandName} numberOfLines={1}>{isRTL && brand.name_ar ? brand.name_ar : brand.name}</Text>
-                  </TouchableOpacity>
+                  <BrandCardHorizontal
+                    key={brand.id}
+                    brand={brand}
+                    type="product"
+                    onPress={() => router.push(`/search?product_brand_id=${brand.id}`)}
+                  />
                 ))}
               </ScrollView>
             </View>
