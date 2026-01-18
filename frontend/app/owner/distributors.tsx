@@ -20,12 +20,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../../src/store/appStore';
+import { useTheme } from '../../src/hooks/useTheme';
 import { distributorApi, carBrandApi } from '../../src/services/api';
 import { VoidDeleteGesture } from '../../src/components/ui/VoidDeleteGesture';
 import { ErrorCapsule } from '../../src/components/ui/ErrorCapsule';
 import { ConfettiEffect } from '../../src/components/ui/ConfettiEffect';
 import { ImageUploader } from '../../src/components/ui/ImageUploader';
 import { Toast } from '../../src/components/ui/FormFeedback';
+import { BrandCardHorizontal } from '../../src/components/BrandCardHorizontal';
 
 type ViewMode = 'list' | 'add' | 'edit' | 'profile';
 
@@ -33,6 +35,7 @@ export default function DistributorsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ viewMode?: string; id?: string }>();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const language = useAppStore((state) => state.language);
   const distributors = useAppStore((state) => state.distributors);
   const setDistributors = useAppStore((state) => state.setDistributors);
