@@ -28,9 +28,9 @@ import Animated, {
   withDelay,
   runOnJS,
 } from 'react-native-reanimated';
-import { useTheme } from '../../src/hooks/useTheme';
-import { useAppStore } from '../../src/store/appStore';
-import { subscriptionRequestApi } from '../../src/services/api';
+import { useTheme } from '../src/hooks/useTheme';
+import { useAppStore } from '../src/store/appStore';
+import { subscriptionRequestApi } from '../src/services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
