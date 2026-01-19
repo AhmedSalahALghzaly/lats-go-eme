@@ -56,6 +56,10 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, addToLocalCart } = useAppStore();
+  const subscriptionStatus = useAppStore((state) => state.subscriptionStatus);
+
+  // Check if user should see subscribe button (not a subscriber and no pending request)
+  const showSubscribeButton = subscriptionStatus === 'none';
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
