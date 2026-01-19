@@ -485,32 +485,6 @@ export default function SubscriptionsScreen() {
                   </VoidDeleteGesture>
                 );
               })
-                          )}
-                          {/* Always show profile button for requests */}
-                          <TouchableOpacity 
-                            style={styles.profileButton}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              if (customer) {
-                                navigateToCustomerProfile(customer.id);
-                              } else {
-                                handleRequestPress(req);
-                              }
-                            }}
-                          >
-                            <Ionicons name="person" size={18} color="#FFF" />
-                          </TouchableOpacity>
-                          {req.status === 'approved' && (
-                            <View style={styles.approvedBadge}>
-                              <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                            </View>
-                          )}
-                        </View>
-                      </BlurView>
-                    </TouchableOpacity>
-                  </VoidDeleteGesture>
-                );
-              })
             )
           )}
         </View>
