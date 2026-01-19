@@ -128,9 +128,20 @@ export default function ModelsAdmin() {
       if (!result.canceled && result.assets && result.assets[0]) {
         const file = result.assets[0];
         setCatalogPdfName(file.name || 'catalog.pdf');
-        // For now, store the URI - in production would upload to cloud storage
-        setCatalogPdf(file.uri);
-        showToast(language === 'ar' ? 'تم اختيار الكتالوج بنجاح' : 'Catalog selected successfully', 'success');
+        
+        // Convert PDF to base64 for storage
+        try {
+          const base64 = await FileSystem.readAsStringAsync(file.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          setCatalogPdf(`data:application/pdf;base64,${base64}`);
+          showToast(language === 'ar' ? 'تم اختيار الكتالوج بنجاح' : 'Catalog selected successfully', 'success');
+        } catch (readError) {
+          console.error('Error reading PDF:', readError);
+          // Fallback to URI if base64 fails
+          setCatalogPdf(file.uri);
+          showToast(language === 'ar' ? 'تم اختيار الكتالوج' : 'Catalog selected', 'success');
+        }
       }
     } catch (error) {
       console.error('Error picking PDF:', error);
