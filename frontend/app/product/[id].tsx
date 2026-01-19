@@ -1512,4 +1512,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Subscribe Banner inside Supplier/Distributor button
+  subscribeBannerContainer: {
+    marginTop: 8,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  subscribeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 8,
+    position: 'relative',
+  },
+  subscribeBannerGoldBorder: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: '#FFD700',
+  },
+  subscribeBannerGoldBorderRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: '#FFD700',
+  },
+  subscribeBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
 });
