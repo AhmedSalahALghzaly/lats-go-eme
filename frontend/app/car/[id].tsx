@@ -467,6 +467,27 @@ const styles = StyleSheet.create({
   infoContainer: {
     padding: 20,
   },
+  // Catalog Badge - Golden styling
+  catalogBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginBottom: 8,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#FFD70050',
+  },
+  catalogBadgeDisabled: {
+    opacity: 0.6,
+  },
+  catalogText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFD700',
+  },
   brandBadge: {
     flexDirection: 'row',
     alignItems: 'center',
