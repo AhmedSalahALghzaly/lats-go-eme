@@ -331,15 +331,47 @@ export default function SubscriptionsScreen() {
                         </View>
                         <View style={styles.info}>
                           <Text style={styles.name}>{sub.name || sub.email || sub.phone}</Text>
+                          {sub.email && (
+                            <View style={styles.emailRow}>
+                              <Text style={styles.email} numberOfLines={1}>{sub.email}</Text>
+                              <TouchableOpacity 
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(sub.email);
+                                }}
+                                style={styles.copyButton}
+                              >
+                                <Ionicons name="copy-outline" size={14} color="rgba(255,255,255,0.7)" />
+                              </TouchableOpacity>
+                            </View>
+                          )}
                           <Text style={styles.date}>
                             {isRTL ? 'منذ' : 'Since'} {new Date(sub.created_at).toLocaleDateString()}
                           </Text>
                         </View>
-                        {customer && (
-                          <View style={styles.customerBadge}>
-                            <Ionicons name="person" size={14} color="#10B981" />
-                          </View>
-                        )}
+                        <View style={styles.actionButtons}>
+                          {/* Task 1: Blue details button for subscribers */}
+                          <TouchableOpacity 
+                            style={styles.profileButton}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              handleSubscriberDetails(sub);
+                            }}
+                          >
+                            <Ionicons name="information-circle" size={18} color="#FFF" />
+                          </TouchableOpacity>
+                          {customer && (
+                            <TouchableOpacity 
+                              style={styles.customerProfileButton}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                navigateToCustomerProfile(customer.id);
+                              }}
+                            >
+                              <Ionicons name="person" size={18} color="#FFF" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
                         <View style={styles.swipeHint}>
                           <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={16} color="rgba(255,255,255,0.4)" />
                         </View>
@@ -358,6 +390,7 @@ export default function SubscriptionsScreen() {
             ) : (
               requests.map((req: any) => {
                 const customer = findCustomerByContact(undefined, req.phone);
+                const customerEmail = customer?.email || req.email;
                 return (
                   <VoidDeleteGesture key={req.id} onDelete={() => handleDeleteRequest(req.id)}>
                     <TouchableOpacity 
@@ -375,7 +408,33 @@ export default function SubscriptionsScreen() {
                         </View>
                         <View style={styles.info}>
                           <Text style={styles.name}>{req.customer_name}</Text>
-                          <Text style={styles.email}>{req.phone}</Text>
+                          {/* Task 2: Clickable email with copy button */}
+                          {customerEmail && (
+                            <View style={styles.emailRow}>
+                              <TouchableOpacity 
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  if (customer) {
+                                    navigateToCustomerProfile(customer.id);
+                                  }
+                                }}
+                              >
+                                <Text style={[styles.email, customer && styles.emailClickable]} numberOfLines={1}>
+                                  {customerEmail}
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity 
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(customerEmail);
+                                }}
+                                style={styles.copyButton}
+                              >
+                                <Ionicons name="copy-outline" size={14} color="rgba(255,255,255,0.7)" />
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                          <Text style={styles.phone}>{req.phone}</Text>
                           <Text style={styles.date}>{req.governorate}</Text>
                         </View>
                         <View style={styles.actionButtons}>
