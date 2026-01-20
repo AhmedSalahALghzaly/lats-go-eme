@@ -1,10 +1,12 @@
 /**
  * React Query (TanStack Query) Configuration
  * Optimized for Al-Ghazaly Auto Parts with smart caching
+ * ENHANCED: Centralized error handling with intelligent retry logic
  */
 import { QueryClient } from '@tanstack/react-query';
+import { parseError } from '../hooks/useErrorHandler';
 
-// Create QueryClient with optimized settings
+// Create QueryClient with optimized settings and error handling
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -12,17 +14,40 @@ export const queryClient = new QueryClient({
       staleTime: 2 * 60 * 1000,
       // Cache kept for 10 minutes
       gcTime: 10 * 60 * 1000,
-      // Retry failed requests 2 times
-      retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      // Intelligent retry based on error type
+      retry: (failureCount, error: any) => {
+        const parsed = parseError(error);
+        // Only retry network and server errors, max 3 times
+        if (parsed.category === 'auth') return false;
+        if (parsed.category === 'validation') return false;
+        return parsed.retryable && failureCount < 3;
+      },
+      retryDelay: (attemptIndex, error: any) => {
+        const parsed = parseError(error);
+        // Network errors: quicker retry with jitter
+        if (parsed.category === 'network') {
+          const base = Math.min(1000 * Math.pow(2, attemptIndex), 10000);
+          return base + Math.random() * 500;
+        }
+        // Server errors: slower retry
+        return Math.min(2000 * Math.pow(2, attemptIndex), 30000);
+      },
       // Don't refetch on window focus for mobile
       refetchOnWindowFocus: false,
       // Refetch on reconnect
       refetchOnReconnect: true,
     },
     mutations: {
-      // Retry mutations once
-      retry: 1,
+      // Intelligent retry for mutations
+      retry: (failureCount, error: any) => {
+        const parsed = parseError(error);
+        // Don't retry auth or validation errors
+        if (parsed.category === 'auth' || parsed.category === 'validation') {
+          return false;
+        }
+        // Retry network/server errors once
+        return parsed.retryable && failureCount < 1;
+      },
     },
   },
 });
