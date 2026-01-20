@@ -220,7 +220,7 @@ export default function CustomersScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Customer List */}
+        {/* Customer List - OPTIMIZED with FlashList */}
         <View style={styles.listContainer}>
           {loading ? (
             [1, 2, 3, 4, 5].map(i => (
@@ -236,65 +236,71 @@ export default function CustomersScreen() {
               </Text>
             </View>
           ) : (
-            sortedCustomers.map((customer, index) => {
-              const userId = customer.user_id || customer.id;
-              const orderInfo = customerOrderStatus[userId] || { status: 'no_active_order', activeCount: 0 };
-              
-              return (
-                <TouchableOpacity 
-                  key={customer.id || index} 
-                  style={styles.customerCard}
-                  onPress={() => handleCustomerPress(customer)}
-                  activeOpacity={0.7}
-                >
-                  <BlurView intensity={15} tint="light" style={styles.cardBlur}>
-                    {/* Rank Badge */}
-                    <View style={[
-                      styles.rankBadge,
-                      index === 0 && styles.rankGold,
-                      index === 1 && styles.rankSilver,
-                      index === 2 && styles.rankBronze,
-                    ]}>
-                      <Text style={styles.rankText}>#{index + 1}</Text>
-                    </View>
+            <FlashList
+              data={sortedCustomers}
+              renderItem={({ item: customer, index }) => {
+                const userId = customer.user_id || customer.id;
+                const orderInfo = customerOrderStatus[userId] || { status: 'no_active_order', activeCount: 0 };
+                
+                return (
+                  <TouchableOpacity 
+                    style={styles.customerCard}
+                    onPress={() => handleCustomerPress(customer)}
+                    activeOpacity={0.7}
+                  >
+                    <BlurView intensity={15} tint="light" style={styles.cardBlur}>
+                      {/* Rank Badge */}
+                      <View style={[
+                        styles.rankBadge,
+                        index === 0 && styles.rankGold,
+                        index === 1 && styles.rankSilver,
+                        index === 2 && styles.rankBronze,
+                      ]}>
+                        <Text style={styles.rankText}>#{index + 1}</Text>
+                      </View>
 
-                    {/* Real-Time Status Indicator */}
-                    <View style={styles.statusIndicatorContainer}>
-                      <OrderStatusIndicator 
-                        status={orderInfo.status}
-                        activeOrderCount={orderInfo.activeCount}
-                        size={24}
-                      />
-                    </View>
+                      {/* Real-Time Status Indicator */}
+                      <View style={styles.statusIndicatorContainer}>
+                        <OrderStatusIndicator 
+                          status={orderInfo.status}
+                          activeOrderCount={orderInfo.activeCount}
+                          size={24}
+                        />
+                      </View>
 
-                    <View style={styles.customerAvatar}>
-                      <Ionicons name="person" size={24} color="#3B82F6" />
-                    </View>
-                    
-                    <View style={styles.customerInfo}>
-                      <Text style={styles.customerName}>{customer.name || customer.email}</Text>
-                      <Text style={styles.customerEmail}>{customer.email}</Text>
-                      <View style={styles.customerStats}>
-                        <View style={styles.customerStat}>
-                          <Ionicons name="cart" size={12} color="#10B981" />
-                          <Text style={styles.customerStatText}>
-                            {customer.order_count || customer.total_orders || 0} {isRTL ? 'طلبات' : 'orders'}
-                          </Text>
-                        </View>
-                        <View style={styles.customerStat}>
-                          <Ionicons name="cash" size={12} color="#F59E0B" />
-                          <Text style={styles.customerStatText}>
-                            {(customer.total_spent || customer.total_value || 0).toLocaleString()} {isRTL ? 'ج.م' : 'EGP'}
-                          </Text>
+                      <View style={styles.customerAvatar}>
+                        <Ionicons name="person" size={24} color="#3B82F6" />
+                      </View>
+                      
+                      <View style={styles.customerInfo}>
+                        <Text style={styles.customerName}>{customer.name || customer.email}</Text>
+                        <Text style={styles.customerEmail}>{customer.email}</Text>
+                        <View style={styles.customerStats}>
+                          <View style={styles.customerStat}>
+                            <Ionicons name="cart" size={12} color="#10B981" />
+                            <Text style={styles.customerStatText}>
+                              {customer.order_count || customer.total_orders || 0} {isRTL ? 'طلبات' : 'orders'}
+                            </Text>
+                          </View>
+                          <View style={styles.customerStat}>
+                            <Ionicons name="cash" size={12} color="#F59E0B" />
+                            <Text style={styles.customerStatText}>
+                              {(customer.total_spent || customer.total_value || 0).toLocaleString()} {isRTL ? 'ج.م' : 'EGP'}
+                            </Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
 
-                    <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
-                  </BlurView>
-                </TouchableOpacity>
-              );
-            })
+                      <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
+                    </BlurView>
+                  </TouchableOpacity>
+                );
+              }}
+              keyExtractor={(customer, index) => customer.id || String(index)}
+              estimatedItemSize={90}
+              scrollEnabled={false}
+              extraData={customerOrderStatus}
+            />
           )}
         </View>
 
