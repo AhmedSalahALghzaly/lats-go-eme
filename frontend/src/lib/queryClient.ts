@@ -110,6 +110,16 @@ export const queryKeys = {
   analytics: {
     overview: (startDate?: string, endDate?: string) => ['analytics', 'overview', startDate, endDate] as const,
   },
+  // Suppliers
+  suppliers: {
+    all: ['suppliers'] as const,
+    detail: (id: string) => ['suppliers', 'detail', id] as const,
+  },
+  // Distributors
+  distributors: {
+    all: ['distributors'] as const,
+    detail: (id: string) => ['distributors', 'detail', id] as const,
+  },
 };
 
 export default queryClient;
