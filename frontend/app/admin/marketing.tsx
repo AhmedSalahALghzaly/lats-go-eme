@@ -72,11 +72,35 @@ export default function MarketingSuiteScreen() {
   const { language, isRTL } = useTranslation();
   const router = useRouter();
 
+  // Use React Query for data fetching
+  const {
+    data: marketingData,
+    isLoading: loading,
+    isRefetching: refreshing,
+    refetch,
+  } = useMarketingQuery();
+
+  // Extract data from query
+  const promotions = useMemo(() => marketingData?.promotions || [], [marketingData]);
+  const bundleOffers = useMemo(() => marketingData?.bundles || [], [marketingData]);
+  const products = useMemo(() => marketingData?.products || [], [marketingData]);
+  const carModels = useMemo(() => marketingData?.carModels || [], [marketingData]);
+
+  // Mutations
+  const {
+    createPromotion,
+    updatePromotion,
+    deletePromotion: deletePromotionMutation,
+    reorderPromotions,
+  } = usePromotionMutations();
+
+  const {
+    createBundle,
+    updateBundle,
+    deleteBundle: deleteBundleMutation,
+  } = useBundleMutations();
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('promotions');
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [bundleOffers, setBundleOffers] = useState<BundleOffer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   // Modal states
   const [showPromotionModal, setShowPromotionModal] = useState(false);
