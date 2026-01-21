@@ -669,30 +669,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,  // Reduced by 10% from 40
+    height: 36, // Reduced by 10% from 40
+    borderRadius: 18, // Half of width/height
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
-      },
-      default: {
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
-      },
-    }),
+    // Shadow removed as per user request
   },
   iconGlow: {
     position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 45,  // Reduced by 10% from 50
+    height: 45, // Reduced by 10% from 50
+    borderRadius: 22.5, // Half of width/height
   },
   dotsRow: {
     flexDirection: 'row',
