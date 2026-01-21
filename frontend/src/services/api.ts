@@ -292,10 +292,35 @@ export const notificationApi = {
   markAllRead: () => api.post('/notifications/mark-all-read'),
 };
 
-// Analytics APIs
+// Analytics API - Extended with all sub-endpoints
 export const analyticsApi = {
-  getOverview: (startDate?: string, endDate?: string) => 
-    api.get('/analytics/overview', { params: { start_date: startDate, end_date: endDate } }),
+  // Overview analytics (original)
+  getOverview: (params?: { start_date?: string; end_date?: string }) => 
+    api.get('/analytics/overview', { params }),
+  
+  // Collections analytics (original)
+  getCollections: (params?: { admin_id?: string }) => 
+    api.get('/analytics/collections', { params }),
+  
+  // NEW: Customer analytics
+  getCustomers: (params?: { start_date?: string; end_date?: string }) => 
+    api.get('/analytics/customers', { params }),
+  
+  // NEW: Product analytics
+  getProducts: (params?: { start_date?: string; end_date?: string }) => 
+    api.get('/analytics/products', { params }),
+  
+  // NEW: Order analytics
+  getOrders: (params?: { start_date?: string; end_date?: string }) => 
+    api.get('/analytics/orders', { params }),
+  
+  // NEW: Revenue analytics
+  getRevenue: (params?: { start_date?: string; end_date?: string }) => 
+    api.get('/analytics/revenue', { params }),
+  
+  // NEW: Admin performance analytics
+  getAdminPerformance: (params?: { start_date?: string; end_date?: string }) => 
+    api.get('/analytics/admin-performance', { params }),
 };
 
 // Collection APIs
