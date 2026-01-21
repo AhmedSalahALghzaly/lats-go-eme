@@ -240,3 +240,79 @@ async def delete_subscription_request(request_id: str, request: Request):
     
     await db.subscription_requests.update_one({"_id": request_id}, {"$set": {"deleted_at": datetime.now(timezone.utc)}})
     return {"message": "Deleted"}
+
+
+# ==================== NEW: Reject Subscription Request ====================
+@router.patch("/subscription-requests/{request_id}/reject")
+async def reject_subscription_request(request_id: str, request: Request):
+    """Reject a subscription request"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get the subscription request
+    sub_request = await db.subscription_requests.find_one({"_id": request_id})
+    if not sub_request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if sub_request.get("status") != "pending":
+        raise HTTPException(status_code=400, detail="Only pending requests can be rejected")
+    
+    # Update request status to rejected
+    await db.subscription_requests.update_one(
+        {"_id": request_id},
+        {"$set": {"status": "rejected", "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    # Broadcast sync update
+    await manager.broadcast({"type": "sync", "tables": ["subscription_requests"]})
+    
+    return {"message": "Rejected"}
+
+
+# ==================== NEW: Get Single Subscriber ====================
+@router.get("/subscribers/{subscriber_id}")
+async def get_subscriber(subscriber_id: str, request: Request):
+    """Get a single subscriber by ID"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"_id": subscriber_id, "deleted_at": None})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    return serialize_doc(subscriber)
+
+
+# ==================== NEW: Update Subscriber ====================
+@router.put("/subscribers/{subscriber_id}")
+async def update_subscriber(subscriber_id: str, request: Request):
+    """Update subscriber information"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    data = await request.json()
+    
+    subscriber = await db.subscribers.find_one({"_id": subscriber_id, "deleted_at": None})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    # Update allowed fields
+    update_data = {
+        "updated_at": datetime.now(timezone.utc)
+    }
+    allowed_fields = ["name", "email", "phone", "governorate", "village", "address", "car_model"]
+    for field in allowed_fields:
+        if field in data:
+            update_data[field] = data[field]
+    
+    await db.subscribers.update_one({"_id": subscriber_id}, {"$set": update_data})
+    await manager.broadcast({"type": "sync", "tables": ["subscribers"]})
+    
+    updated = await db.subscribers.find_one({"_id": subscriber_id})
+    return serialize_doc(updated)
