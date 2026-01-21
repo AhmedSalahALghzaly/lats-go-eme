@@ -380,6 +380,31 @@ export default function CustomersAdmin() {
 
   const keyExtractor = useCallback((item: Customer) => item.user_id || item.id, []);
 
+  // Customer Profile Modal - Conditional rendering inside main return (fixes hooks violation)
+  if (showProfile && selectedCustomer) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
+        <Header 
+          title={selectedCustomer?.name || (language === 'ar' ? 'ملف العميل' : 'Customer Profile')} 
+          showBack 
+          showSearch={false} 
+          showCart={false} 
+        />
+        <UnifiedShoppingHub
+          customerId={selectedCustomer.id}
+          customerData={selectedCustomer}
+          isAdminView={true}
+          onClose={() => {
+            setShowProfile(false);
+            setSelectedCustomer(null);
+            refetch(); // Refresh list on close
+          }}
+          initialTab={initialTab}
+        />
+      </SafeAreaView>
+    );
+  }
+
   // Main Customer List View
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
