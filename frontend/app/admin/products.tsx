@@ -371,22 +371,19 @@ export default function ProductsAdmin() {
     if (!productToDelete) return;
 
     setDeleting(true);
-    setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
     
     try {
-      const result = await adminSync.deleteProduct(productToDelete.id);
+      const result = await deleteProductMutation.mutateAsync(productToDelete.id);
       
       if (result.success) {
         showToast(language === 'ar' ? 'تم حذف المنتج بنجاح' : 'Product deleted successfully', 'success');
       } else {
-        setProducts(prev => [productToDelete, ...prev]);
         showToast(result.error || 'Failed to delete product', 'error');
       }
       
       setShowDeleteModal(false);
       setProductToDelete(null);
     } catch (error: any) {
-      setProducts(prev => [productToDelete, ...prev]);
       showToast(error.response?.data?.detail || 'Error deleting product', 'error');
     } finally {
       setDeleting(false);
