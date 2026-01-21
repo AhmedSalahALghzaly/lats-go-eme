@@ -268,18 +268,21 @@ export const distributorApi = {
   delete: (id: string) => api.delete(`/distributors/${id}`),
 };
 
-// Subscriber APIs
+// Subscriber APIs - Extended with all CRUD operations
 export const subscriberApi = {
   getAll: () => api.get('/subscribers'),
+  getById: (id: string) => api.get(`/subscribers/${id}`),
   create: (email: string) => api.post('/subscribers', { email }),
+  update: (id: string, data: any) => api.put(`/subscribers/${id}`, data),
   delete: (id: string) => api.delete(`/subscribers/${id}`),
 };
 
-// Subscription Request APIs
+// Subscription Request APIs - Extended with reject endpoint
 export const subscriptionRequestApi = {
   getAll: () => api.get('/subscription-requests'),
   create: (data: any) => api.post('/subscription-requests', data),
   approve: (id: string) => api.patch(`/subscription-requests/${id}/approve`),
+  reject: (id: string) => api.patch(`/subscription-requests/${id}/reject`),
   delete: (id: string) => api.delete(`/subscription-requests/${id}`),
   getStatus: (email?: string, phone?: string) => 
     api.get('/subscription-status', { params: { email, phone } }),
