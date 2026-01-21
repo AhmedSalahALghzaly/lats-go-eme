@@ -203,7 +203,9 @@ export function useCategoriesTreeQuery() {
   return useQuery({
     queryKey: homeScreenKeys.categories,
     queryFn: async () => {
+      console.log('[useCategoriesTreeQuery] Fetching categories tree...');
       const response = await categoriesApi.getTree();
+      console.log('[useCategoriesTreeQuery] Response received:', response.data?.length || 0, 'categories');
       return response.data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
