@@ -395,22 +395,18 @@ export default function ProductsAdmin() {
     
     setUpdatingQuantityId(productId);
     try {
-      const product = products.find(p => p.id === productId);
-      if (product) {
-        await productsApi.update(productId, {
-          ...product,
-          stock_quantity: newQuantity,
-        });
-        setProducts(prev => prev.map(p => 
-          p.id === productId ? { ...p, stock_quantity: newQuantity, stock: newQuantity } : p
-        ));
-      }
+      await updateQuantityMutation.mutateAsync({
+        productId,
+        quantity: newQuantity,
+      });
+      showToast(language === 'ar' ? 'تم تحديث الكمية' : 'Quantity updated', 'success');
     } catch (error) {
       console.error('Error updating quantity:', error);
+      showToast(language === 'ar' ? 'فشل تحديث الكمية' : 'Failed to update quantity', 'error');
     } finally {
       setUpdatingQuantityId(null);
     }
-  }, [products, quantityInputs]);
+  }, [quantityInputs, updateQuantityMutation, language]);
 
   const handleQuantityInputChange = useCallback((productId: string, value: string) => {
     setQuantityInputs(prev => ({ ...prev, [productId]: value }));
