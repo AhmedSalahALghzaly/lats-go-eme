@@ -623,9 +623,6 @@ const styles = StyleSheet.create({
   newPrice: {
     fontSize: 20,
     fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
   },
   currency: {
     fontSize: 12,
