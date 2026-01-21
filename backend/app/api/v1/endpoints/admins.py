@@ -75,6 +75,67 @@ async def add_admin(data: AdminCreate, request: Request):
     await manager.broadcast({"type": "sync", "tables": ["admins"]})
     return serialize_doc(admin)
 
+@router.get("/{admin_id}")
+async def get_admin(admin_id: str, request: Request):
+    """Get a single admin by ID"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    admin = await db.admins.find_one({"_id": admin_id, "deleted_at": None})
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    
+    admin_data = serialize_doc(admin)
+    # Include stats
+    products = await db.products.find({"added_by_admin_id": admin_id, "deleted_at": None}).to_list(10000)
+    admin_data["products_added"] = len(products)
+    
+    product_ids = [p["_id"] for p in products]
+    orders = await db.orders.find({"items.product_id": {"$in": product_ids}}).to_list(10000)
+    delivered = sum(1 for o in orders if o.get("status") == "delivered")
+    processing = sum(1 for o in orders if o.get("status") in ["pending", "preparing", "shipped", "out_for_delivery"])
+    
+    admin_data["products_delivered"] = delivered
+    admin_data["products_processing"] = processing
+    admin_data["revenue"] = admin.get("revenue", 0)
+    
+    assisted_orders = await db.orders.count_documents({"order_source": "admin_assisted", "created_by_admin_id": admin_id})
+    admin_data["assisted_orders"] = assisted_orders
+    
+    return admin_data
+
+@router.put("/{admin_id}")
+async def update_admin(admin_id: str, data: AdminCreate, request: Request):
+    """Update an admin by ID"""
+    user = await get_current_user(request)
+    role = await get_user_role(user) if user else "guest"
+    if role not in ["owner", "partner"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    admin = await db.admins.find_one({"_id": admin_id, "deleted_at": None})
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    
+    # Check if email is already taken by another admin
+    if data.email != admin.get("email"):
+        existing = await db.admins.find_one({"email": data.email, "_id": {"$ne": admin_id}, "deleted_at": None})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use by another admin")
+    
+    update_data = {
+        "email": data.email,
+        "name": data.name or data.email.split("@")[0],
+        "updated_at": datetime.now(timezone.utc),
+    }
+    
+    await db.admins.update_one({"_id": admin_id}, {"$set": update_data})
+    await manager.broadcast({"type": "sync", "tables": ["admins"]})
+    
+    updated_admin = await db.admins.find_one({"_id": admin_id})
+    return serialize_doc(updated_admin)
+
 @router.delete("/{admin_id}")
 async def delete_admin(admin_id: str, request: Request):
     user = await get_current_user(request)
