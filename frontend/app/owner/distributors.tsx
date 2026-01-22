@@ -1,7 +1,7 @@
 /**
  * Distributors Management - Refactored with TanStack Query + FlashList
  * High-performance, stable architecture with optimistic updates
- * FIXED: Hooks order issue - all hooks are called before any conditional returns
+ * REFACTORED: Removed legacy add/edit forms - now using unified add-entity-form route
  */
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
@@ -15,8 +15,6 @@ import {
   Image,
   Linking,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,16 +24,15 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppStore } from '../../src/store/appStore';
 import { useTheme } from '../../src/hooks/useTheme';
-import { distributorApi, productBrandApi } from '../../src/services/api';
+import { distributorApi } from '../../src/services/api';
 import { VoidDeleteGesture } from '../../src/components/ui/VoidDeleteGesture';
 import { ErrorCapsule } from '../../src/components/ui/ErrorCapsule';
 import { ConfettiEffect } from '../../src/components/ui/ConfettiEffect';
-import { ImageUploader } from '../../src/components/ui/ImageUploader';
 import { Toast } from '../../src/components/ui/FormFeedback';
 import { BrandCardHorizontal } from '../../src/components/BrandCardHorizontal';
 import { queryKeys } from '../../src/lib/queryClient';
 
-type ViewMode = 'list' | 'add' | 'edit' | 'profile';
+type ViewMode = 'list' | 'profile';
 
 interface Distributor {
   id: string;
@@ -65,7 +62,6 @@ const DistributorListItem = React.memo(({
   language,
   isOwnerOrAdmin,
   onPress,
-  onEdit,
   onDelete,
 }: {
   distributor: Distributor;
@@ -74,7 +70,6 @@ const DistributorListItem = React.memo(({
   language: string;
   isOwnerOrAdmin: boolean;
   onPress: (distributor: Distributor) => void;
-  onEdit: (distributor: Distributor) => void;
   onDelete: (id: string) => void;
 }) => {
   const displayName = isRTL && distributor.name_ar ? distributor.name_ar : distributor.name;
@@ -149,21 +144,6 @@ export default function DistributorsScreen() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    description: '',
-    website: '',
-    contact_email: '',
-    profile_image: '',
-    images: [] as string[],
-    linked_brands: [] as string[],
-    regions: [] as string[],
-    newRegion: '',
-  });
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
@@ -205,46 +185,6 @@ export default function DistributorsScreen() {
     setToastType(type);
     setToastVisible(true);
   }, []);
-
-  // Create Mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await distributorApi.create(data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.distributors.all });
-      setShowConfetti(true);
-      showToast(isRTL ? 'تم إضافة الموزع بنجاح' : 'Distributor added successfully', 'success');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      resetForm();
-      setViewMode('list');
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Failed to add distributor');
-      showToast(err.response?.data?.detail || 'Failed to add distributor', 'error');
-    },
-  });
-
-  // Update Mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await distributorApi.update(id, data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.distributors.all });
-      showToast(isRTL ? 'تم تحديث الموزع بنجاح' : 'Distributor updated successfully', 'success');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      resetForm();
-      setViewMode('list');
-      setSelectedDistributor(null);
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Failed to update distributor');
-      showToast(err.response?.data?.detail || 'Failed to update distributor', 'error');
-    },
-  });
 
   // Delete Mutation with Optimistic Update
   const deleteMutation = useMutation({
@@ -304,86 +244,18 @@ export default function DistributorsScreen() {
     handleProfileNavigation();
   }, [params.viewMode, params.id, distributors, isLoading]);
 
-  const resetForm = useCallback(() => {
-    setFormData({
-      name: '',
-      phone: '',
-      address: '',
-      description: '',
-      website: '',
-      contact_email: '',
-      profile_image: '',
-      images: [],
-      linked_brands: [],
-      regions: [],
-      newRegion: '',
-    });
-  }, []);
-
-  const handleAddDistributor = useCallback(() => {
-    if (!formData.name.trim()) {
-      setError(isRTL ? 'الاسم مطلوب' : 'Name is required');
-      return;
-    }
-    const { newRegion, ...dataToSend } = formData;
-    createMutation.mutate(dataToSend);
-  }, [formData, isRTL, createMutation]);
-
-  const handleUpdateDistributor = useCallback(() => {
-    if (!selectedDistributor) return;
-    const { newRegion, ...dataToSend } = formData;
-    updateMutation.mutate({ id: selectedDistributor.id, data: dataToSend });
-  }, [selectedDistributor, formData, updateMutation]);
-
   const handleDeleteDistributor = useCallback((distributorId: string) => {
     deleteMutation.mutate(distributorId);
   }, [deleteMutation]);
-
-  const openEditMode = useCallback((distributor: Distributor) => {
-    setSelectedDistributor(distributor);
-    setFormData({
-      name: distributor.name || '',
-      phone: distributor.phone || '',
-      address: distributor.address || '',
-      description: distributor.description || '',
-      website: distributor.website || '',
-      contact_email: distributor.contact_email || '',
-      profile_image: distributor.profile_image || '',
-      images: distributor.images || [],
-      linked_brands: distributor.linked_brands || [],
-      regions: distributor.regions || [],
-      newRegion: '',
-    });
-    setViewMode('edit');
-  }, []);
 
   const openProfileMode = useCallback((distributor: Distributor) => {
     setSelectedDistributor(distributor);
     setViewMode('profile');
   }, []);
 
-  const addRegion = useCallback(() => {
-    if (formData.newRegion.trim() && !formData.regions.includes(formData.newRegion.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        regions: [...prev.regions, prev.newRegion.trim()],
-        newRegion: '',
-      }));
-    }
-  }, [formData.newRegion, formData.regions]);
-
-  const removeRegion = useCallback((region: string) => {
-    setFormData(prev => ({
-      ...prev,
-      regions: prev.regions.filter(r => r !== region),
-    }));
-  }, []);
-
   const onRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
-
-  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   // ============================================================================
   // CRITICAL: All useCallback hooks must be defined BEFORE any conditional returns
@@ -407,7 +279,7 @@ export default function DistributorsScreen() {
           {isOwnerOrAdmin && (
             <TouchableOpacity 
               style={[styles.addButton, { backgroundColor: colors.primary }]} 
-              onPress={() => setViewMode('add')}
+              onPress={() => router.push('/owner/add-entity-form?entityType=distributor')}
             >
               <Ionicons name="add" size={24} color="#FFF" />
             </TouchableOpacity>
@@ -470,10 +342,9 @@ export default function DistributorsScreen() {
       language={language}
       isOwnerOrAdmin={isOwnerOrAdmin}
       onPress={openProfileMode}
-      onEdit={openEditMode}
       onDelete={handleDeleteDistributor}
     />
-  ), [colors, isRTL, language, isOwnerOrAdmin, openProfileMode, openEditMode, handleDeleteDistributor]);
+  ), [colors, isRTL, language, isOwnerOrAdmin, openProfileMode, handleDeleteDistributor]);
 
   const keyExtractor = useCallback((item: Distributor) => item.id, []);
 
@@ -624,213 +495,6 @@ export default function DistributorsScreen() {
     );
   }
 
-  // Add/Edit Form View
-  if (viewMode === 'add' || viewMode === 'edit') {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <KeyboardAvoidingView 
-          style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}>
-            {/* Header */}
-            <View style={[styles.formHeader, isRTL && styles.headerRTL]}>
-              <TouchableOpacity 
-                style={[styles.backButton, { backgroundColor: colors.surface }]} 
-                onPress={() => { setViewMode('list'); resetForm(); setSelectedDistributor(null); }}
-              >
-                <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[styles.formHeaderTitle, { color: colors.text }]}>
-                {viewMode === 'add' 
-                  ? (isRTL ? 'إضافة موزع' : 'Add Distributor')
-                  : (isRTL ? 'تعديل الموزع' : 'Edit Distributor')
-                }
-              </Text>
-              <View style={{ width: 40 }} />
-            </View>
-
-            {/* Profile Image */}
-            <View style={styles.formGroup}>
-              <ImageUploader
-                mode="single"
-                value={formData.profile_image}
-                onChange={(img) => setFormData(prev => ({ ...prev, profile_image: img as string }))}
-                size="large"
-                shape="circle"
-                label={isRTL ? 'صورة الموزع' : 'Distributor Image'}
-              />
-            </View>
-
-            {/* Name */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'الاسم *' : 'Name *'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.name}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder={isRTL ? 'اسم الموزع' : 'Distributor name'}
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
-
-            {/* Phone */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'رقم الهاتف' : 'Phone'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.phone}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
-                placeholder={isRTL ? 'رقم الهاتف' : 'Phone number'}
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="phone-pad"
-              />
-            </View>
-
-            {/* Email */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'البريد الإلكتروني' : 'Email'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.contact_email}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, contact_email: text }))}
-                placeholder={isRTL ? 'البريد الإلكتروني' : 'Email address'}
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            {/* Website */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'الموقع الإلكتروني' : 'Website'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.website}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, website: text }))}
-                placeholder="https://example.com"
-                placeholderTextColor={colors.textSecondary}
-                autoCapitalize="none"
-              />
-            </View>
-
-            {/* Regions */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'المناطق' : 'Regions'}
-              </Text>
-              <View style={styles.regionInputRow}>
-                <TextInput
-                  style={[styles.regionInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                  value={formData.newRegion}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, newRegion: text }))}
-                  placeholder={isRTL ? 'أضف منطقة' : 'Add region'}
-                  placeholderTextColor={colors.textSecondary}
-                  onSubmitEditing={addRegion}
-                />
-                <TouchableOpacity
-                  style={[styles.addRegionButton, { backgroundColor: colors.primary }]}
-                  onPress={addRegion}
-                >
-                  <Ionicons name="add" size={24} color="#FFF" />
-                </TouchableOpacity>
-              </View>
-              {formData.regions.length > 0 && (
-                <View style={styles.regionChips}>
-                  {formData.regions.map((region, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[styles.regionChip, { backgroundColor: colors.primary + '20' }]}
-                      onPress={() => removeRegion(region)}
-                    >
-                      <Text style={[styles.regionChipText, { color: colors.primary }]}>{region}</Text>
-                      <Ionicons name="close-circle" size={16} color={colors.primary} />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            {/* Address */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'العنوان' : 'Address'}
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.address}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
-                placeholder={isRTL ? 'العنوان' : 'Address'}
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            {/* Description */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'الوصف' : 'Description'}
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.description}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
-                placeholder={isRTL ? 'وصف الموزع' : 'Description'}
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={4}
-              />
-            </View>
-
-            {/* Save Button */}
-            <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: colors.primary }]}
-              onPress={viewMode === 'add' ? handleAddDistributor : handleUpdateDistributor}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <>
-                  <Ionicons name={viewMode === 'add' ? 'add' : 'checkmark'} size={20} color="#FFF" />
-                  <Text style={styles.saveButtonText}>
-                    {viewMode === 'add' 
-                      ? (isRTL ? 'إضافة الموزع' : 'Add Distributor')
-                      : (isRTL ? 'حفظ التغييرات' : 'Save Changes')
-                    }
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-
-        {error && (
-          <ErrorCapsule
-            message={error}
-            onDismiss={() => setError(null)}
-          />
-        )}
-
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          type={toastType}
-          onDismiss={() => setToastVisible(false)}
-        />
-      </View>
-    );
-  }
-
   // Main List View
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -877,7 +541,6 @@ export default function DistributorsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  keyboardView: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
   listContentContainer: { paddingHorizontal: 16, paddingBottom: 100 },
@@ -939,16 +602,4 @@ const styles = StyleSheet.create({
   descriptionText: { fontSize: 14, lineHeight: 22 },
   brandsSection: { marginTop: 20, paddingHorizontal: 16 },
   brandsScroll: { marginTop: 12 },
-  // Form styles
-  formHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 24 },
-  formHeaderTitle: { fontSize: 20, fontWeight: '700' },
-  formGroup: { paddingHorizontal: 16, marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  input: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16 },
-  textArea: { height: 100, textAlignVertical: 'top' },
-  regionInputRow: { flexDirection: 'row', gap: 8 },
-  regionInput: { flex: 1, borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16 },
-  addRegionButton: { width: 52, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 16, padding: 16, borderRadius: 12, gap: 8, marginTop: 8 },
-  saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
 });

@@ -1,7 +1,7 @@
 /**
  * Suppliers Management - Refactored with TanStack Query + FlashList
  * High-performance, stable architecture with optimistic updates
- * FIXED: Hooks order issue - all hooks are called before any conditional returns
+ * REFACTORED: Removed legacy add/edit forms - now using unified add-entity-form route
  */
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
@@ -15,8 +15,6 @@ import {
   Image,
   Linking,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,16 +24,15 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppStore } from '../../src/store/appStore';
 import { useTheme } from '../../src/hooks/useTheme';
-import { supplierApi, productBrandApi } from '../../src/services/api';
+import { supplierApi } from '../../src/services/api';
 import { VoidDeleteGesture } from '../../src/components/ui/VoidDeleteGesture';
 import { ErrorCapsule } from '../../src/components/ui/ErrorCapsule';
 import { ConfettiEffect } from '../../src/components/ui/ConfettiEffect';
-import { ImageUploader } from '../../src/components/ui/ImageUploader';
 import { Toast } from '../../src/components/ui/FormFeedback';
 import { BrandCardHorizontal } from '../../src/components/BrandCardHorizontal';
 import { queryKeys } from '../../src/lib/queryClient';
 
-type ViewMode = 'list' | 'add' | 'edit' | 'profile';
+type ViewMode = 'list' | 'profile';
 
 interface Supplier {
   id: string;
@@ -63,7 +60,6 @@ const SupplierListItem = React.memo(({
   language,
   isOwnerOrAdmin,
   onPress,
-  onEdit,
   onDelete,
 }: {
   supplier: Supplier;
@@ -72,7 +68,6 @@ const SupplierListItem = React.memo(({
   language: string;
   isOwnerOrAdmin: boolean;
   onPress: (supplier: Supplier) => void;
-  onEdit: (supplier: Supplier) => void;
   onDelete: (id: string) => void;
 }) => {
   const displayName = isRTL && supplier.name_ar ? supplier.name_ar : supplier.name;
@@ -138,19 +133,6 @@ export default function SuppliersScreen() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    description: '',
-    website: '',
-    contact_email: '',
-    profile_image: '',
-    images: [] as string[],
-    linked_brands: [] as string[],
-  });
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
@@ -191,46 +173,6 @@ export default function SuppliersScreen() {
     setToastType(type);
     setToastVisible(true);
   }, []);
-
-  // Create Mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await supplierApi.create(data);
-      return res.data;
-    },
-    onSuccess: (newSupplier) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
-      setShowConfetti(true);
-      showToast(isRTL ? 'تم إضافة المورد بنجاح' : 'Supplier added successfully', 'success');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      resetForm();
-      setViewMode('list');
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Failed to add supplier');
-      showToast(err.response?.data?.detail || 'Failed to add supplier', 'error');
-    },
-  });
-
-  // Update Mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await supplierApi.update(id, data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
-      showToast(isRTL ? 'تم تحديث المورد بنجاح' : 'Supplier updated successfully', 'success');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      resetForm();
-      setViewMode('list');
-      setSelectedSupplier(null);
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Failed to update supplier');
-      showToast(err.response?.data?.detail || 'Failed to update supplier', 'error');
-    },
-  });
 
   // Delete Mutation with Optimistic Update
   const deleteMutation = useMutation({
@@ -290,72 +232,18 @@ export default function SuppliersScreen() {
     handleProfileNavigation();
   }, [params.viewMode, params.id, suppliers, isLoading]);
 
-  const resetForm = useCallback(() => {
-    setFormData({
-      name: '',
-      phone: '',
-      address: '',
-      description: '',
-      website: '',
-      contact_email: '',
-      profile_image: '',
-      images: [],
-      linked_brands: [],
-    });
-  }, []);
-
-  const handleAddSupplier = useCallback(() => {
-    if (!formData.name.trim()) {
-      setError(isRTL ? 'الاسم مطلوب' : 'Name is required');
-      return;
-    }
-    createMutation.mutate(formData);
-  }, [formData, isRTL, createMutation]);
-
-  const handleUpdateSupplier = useCallback(() => {
-    if (!selectedSupplier) return;
-    updateMutation.mutate({ id: selectedSupplier.id, data: formData });
-  }, [selectedSupplier, formData, updateMutation]);
-
   const handleDeleteSupplier = useCallback((supplierId: string) => {
     deleteMutation.mutate(supplierId);
   }, [deleteMutation]);
-
-  const openEditMode = useCallback((supplier: Supplier) => {
-    setSelectedSupplier(supplier);
-    setFormData({
-      name: supplier.name || '',
-      phone: supplier.phone || '',
-      address: supplier.address || '',
-      description: supplier.description || '',
-      website: supplier.website || '',
-      contact_email: supplier.contact_email || '',
-      profile_image: supplier.profile_image || '',
-      images: supplier.images || [],
-      linked_brands: supplier.linked_brands || [],
-    });
-    setViewMode('edit');
-  }, []);
 
   const openProfileMode = useCallback((supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setViewMode('profile');
   }, []);
 
-  const toggleBrandLink = useCallback((brandId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      linked_brands: prev.linked_brands.includes(brandId)
-        ? prev.linked_brands.filter(id => id !== brandId)
-        : [...prev.linked_brands, brandId],
-    }));
-  }, []);
-
   const onRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
-
-  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   // ============================================================================
   // CRITICAL: All useCallback hooks must be defined BEFORE any conditional returns
@@ -379,7 +267,7 @@ export default function SuppliersScreen() {
           {isOwnerOrAdmin && (
             <TouchableOpacity 
               style={[styles.addButton, { backgroundColor: colors.primary }]} 
-              onPress={() => setViewMode('add')}
+              onPress={() => router.push('/owner/add-entity-form?entityType=supplier')}
             >
               <Ionicons name="add" size={24} color="#FFF" />
             </TouchableOpacity>
@@ -442,10 +330,9 @@ export default function SuppliersScreen() {
       language={language}
       isOwnerOrAdmin={isOwnerOrAdmin}
       onPress={openProfileMode}
-      onEdit={openEditMode}
       onDelete={handleDeleteSupplier}
     />
-  ), [colors, isRTL, language, isOwnerOrAdmin, openProfileMode, openEditMode, handleDeleteSupplier]);
+  ), [colors, isRTL, language, isOwnerOrAdmin, openProfileMode, handleDeleteSupplier]);
 
   const keyExtractor = useCallback((item: Supplier) => item.id, []);
 
@@ -567,176 +454,6 @@ export default function SuppliersScreen() {
     );
   }
 
-  // Add/Edit Form View
-  if (viewMode === 'add' || viewMode === 'edit') {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <KeyboardAvoidingView 
-          style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}>
-            {/* Header */}
-            <View style={[styles.formHeader, isRTL && styles.headerRTL]}>
-              <TouchableOpacity 
-                style={[styles.backButton, { backgroundColor: colors.surface }]} 
-                onPress={() => { setViewMode('list'); resetForm(); setSelectedSupplier(null); }}
-              >
-                <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[styles.formHeaderTitle, { color: colors.text }]}>
-                {viewMode === 'add' 
-                  ? (isRTL ? 'إضافة مورد' : 'Add Supplier')
-                  : (isRTL ? 'تعديل المورد' : 'Edit Supplier')
-                }
-              </Text>
-              <View style={{ width: 40 }} />
-            </View>
-
-            {/* Profile Image */}
-            <View style={styles.formGroup}>
-              <ImageUploader
-                mode="single"
-                value={formData.profile_image}
-                onChange={(img) => setFormData(prev => ({ ...prev, profile_image: img as string }))}
-                size="large"
-                shape="circle"
-                label={isRTL ? 'صورة المورد' : 'Supplier Image'}
-              />
-            </View>
-
-            {/* Name */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'الاسم *' : 'Name *'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.name}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder={isRTL ? 'اسم المورد' : 'Supplier name'}
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
-
-            {/* Phone */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'رقم الهاتف' : 'Phone'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.phone}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
-                placeholder={isRTL ? 'رقم الهاتف' : 'Phone number'}
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="phone-pad"
-              />
-            </View>
-
-            {/* Email */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'البريد الإلكتروني' : 'Email'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.contact_email}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, contact_email: text }))}
-                placeholder={isRTL ? 'البريد الإلكتروني' : 'Email address'}
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            {/* Website */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'الموقع الإلكتروني' : 'Website'}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.website}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, website: text }))}
-                placeholder="https://example.com"
-                placeholderTextColor={colors.textSecondary}
-                autoCapitalize="none"
-              />
-            </View>
-
-            {/* Address */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'العنوان' : 'Address'}
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.address}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
-                placeholder={isRTL ? 'العنوان' : 'Address'}
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            {/* Description */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                {isRTL ? 'الوصف' : 'Description'}
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                value={formData.description}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
-                placeholder={isRTL ? 'وصف المورد' : 'Description'}
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={4}
-              />
-            </View>
-
-            {/* Save Button */}
-            <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: colors.primary }]}
-              onPress={viewMode === 'add' ? handleAddSupplier : handleUpdateSupplier}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <>
-                  <Ionicons name={viewMode === 'add' ? 'add' : 'checkmark'} size={20} color="#FFF" />
-                  <Text style={styles.saveButtonText}>
-                    {viewMode === 'add' 
-                      ? (isRTL ? 'إضافة المورد' : 'Add Supplier')
-                      : (isRTL ? 'حفظ التغييرات' : 'Save Changes')
-                    }
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-
-        {error && (
-          <ErrorCapsule
-            message={error}
-            onDismiss={() => setError(null)}
-          />
-        )}
-
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          type={toastType}
-          onDismiss={() => setToastVisible(false)}
-        />
-      </View>
-    );
-  }
-
   // Main List View
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -783,7 +500,6 @@ export default function SuppliersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  keyboardView: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
   listContentContainer: { paddingHorizontal: 16, paddingBottom: 100 },
@@ -836,13 +552,4 @@ const styles = StyleSheet.create({
   descriptionText: { fontSize: 14, lineHeight: 22 },
   brandsSection: { marginTop: 20, paddingHorizontal: 16 },
   brandsScroll: { marginTop: 12 },
-  // Form styles
-  formHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 24 },
-  formHeaderTitle: { fontSize: 20, fontWeight: '700' },
-  formGroup: { paddingHorizontal: 16, marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  input: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16 },
-  textArea: { height: 100, textAlignVertical: 'top' },
-  saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 16, padding: 16, borderRadius: 12, gap: 8, marginTop: 8 },
-  saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
 });
