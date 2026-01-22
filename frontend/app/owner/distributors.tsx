@@ -292,55 +292,51 @@ export default function DistributorsScreen() {
 
   // Handle URL params for direct navigation to profile
   useEffect(() => {
-    const handleProfileNavigation = async () => {
-      // Check for viewMode=profile in URL params
-      if (params.viewMode === 'profile' && params.id) {
-        // Handle restricted users - trigger golden glow
-        if (!canViewProfile) {
-          triggerGoldenGlow();
-          // Clear URL params and stay on list
-          router.setParams({ viewMode: undefined, id: undefined });
-          return;
-        }
+    // Only process if we have profile params
+    if (params.viewMode !== 'profile' || !params.id) {
+      return;
+    }
+    
+    // Handle restricted users - trigger golden glow
+    if (!canViewProfile) {
+      triggerGoldenGlow();
+      router.setParams({ viewMode: undefined, id: undefined });
+      return;
+    }
+    
+    // Avoid re-triggering if already showing this exact profile
+    if (viewMode === 'profile' && selectedDistributor?.id === params.id) {
+      return;
+    }
+    
+    // Set loading state immediately
+    setIsProfileLoading(true);
+    
+    // Async function to fetch and display profile
+    const loadProfile = async () => {
+      try {
+        // Always fetch from API to ensure fresh data
+        const res = await distributorApi.getById(params.id as string);
         
-        // Set loading state immediately
-        setIsProfileLoading(true);
-        
-        // First check if distributor exists in current data
-        let distributor = distributors.find((d) => d.id === params.id);
-        
-        // If not found in cache, fetch directly from API
-        if (!distributor) {
-          try {
-            const res = await distributorApi.getById(params.id);
-            if (res.data) {
-              distributor = res.data;
-            }
-          } catch (err) {
-            console.error('Error fetching distributor:', err);
-            setError(isRTL ? 'فشل في تحميل بيانات الموزع' : 'Failed to load distributor data');
-            setIsProfileLoading(false);
-            router.setParams({ viewMode: undefined, id: undefined });
-            return;
-          }
-        }
-        
-        if (distributor) {
-          setSelectedDistributor(distributor);
+        if (res.data) {
+          // CRITICAL: Set data FIRST, then switch view mode
+          setSelectedDistributor(res.data);
           setSelectedGalleryImage(0);
           setViewMode('profile');
+          setIsProfileLoading(false);
         } else {
-          // Distributor not found
-          setError(isRTL ? 'الموزع غير موجود' : 'Distributor not found');
-          router.setParams({ viewMode: undefined, id: undefined });
+          throw new Error('No data returned');
         }
-        
+      } catch (err) {
+        console.error('Error fetching distributor:', err);
+        setError(isRTL ? 'فشل في تحميل بيانات الموزع' : 'Failed to load distributor data');
         setIsProfileLoading(false);
+        router.setParams({ viewMode: undefined, id: undefined });
       }
     };
     
-    handleProfileNavigation();
-  }, [params.viewMode, params.id, canViewProfile, isRTL]);
+    loadProfile();
+  }, [params.viewMode, params.id, canViewProfile]);
 
   const handleDeleteDistributor = useCallback((distributorId: string) => {
     deleteMutation.mutate(distributorId);

@@ -278,64 +278,51 @@ export default function SuppliersScreen() {
 
   // Handle URL params for direct navigation to profile
   useEffect(() => {
-    const handleProfileNavigation = async () => {
-      // Check for viewMode=profile in URL params
-      if (params.viewMode === 'profile' && params.id) {
-        // Handle restricted users - trigger golden glow
-        if (!canViewProfile) {
-          triggerGoldenGlow();
-          // Clear URL params and stay on list
-          router.setParams({ viewMode: undefined, id: undefined });
-          return;
-        }
+    // Only process if we have profile params
+    if (params.viewMode !== 'profile' || !params.id) {
+      return;
+    }
+    
+    // Handle restricted users - trigger golden glow
+    if (!canViewProfile) {
+      triggerGoldenGlow();
+      router.setParams({ viewMode: undefined, id: undefined });
+      return;
+    }
+    
+    // Avoid re-triggering if already showing this exact profile
+    if (viewMode === 'profile' && selectedSupplier?.id === params.id) {
+      return;
+    }
+    
+    // Set loading state immediately
+    setIsProfileLoading(true);
+    
+    // Async function to fetch and display profile
+    const loadProfile = async () => {
+      try {
+        // Always fetch from API to ensure fresh data
+        const res = await supplierApi.getById(params.id as string);
         
-        // Avoid re-triggering if already showing this profile
-        if (viewMode === 'profile' && selectedSupplier?.id === params.id) {
-          return;
-        }
-        
-        // Set loading state immediately
-        setIsProfileLoading(true);
-        
-        // First check if supplier exists in current data
-        let supplier = suppliers.find((s) => s.id === params.id);
-        
-        // If not found in cache, fetch directly from API
-        if (!supplier) {
-          try {
-            const res = await supplierApi.getById(params.id);
-            if (res.data) {
-              supplier = res.data;
-            }
-          } catch (err) {
-            console.error('Error fetching supplier:', err);
-            setError(isRTL ? 'فشل في تحميل بيانات المورد' : 'Failed to load supplier data');
-            setIsProfileLoading(false);
-            router.setParams({ viewMode: undefined, id: undefined });
-            return;
-          }
-        }
-        
-        if (supplier) {
-          // CRITICAL: Set supplier FIRST, then viewMode
-          setSelectedSupplier(supplier);
+        if (res.data) {
+          // CRITICAL: Set data FIRST, then switch view mode
+          setSelectedSupplier(res.data);
           setSelectedGalleryImage(0);
-          // Small delay to ensure state is set before switching view
-          setTimeout(() => {
-            setViewMode('profile');
-            setIsProfileLoading(false);
-          }, 50);
-        } else {
-          // Supplier not found
-          setError(isRTL ? 'المورد غير موجود' : 'Supplier not found');
+          setViewMode('profile');
           setIsProfileLoading(false);
-          router.setParams({ viewMode: undefined, id: undefined });
+        } else {
+          throw new Error('No data returned');
         }
+      } catch (err) {
+        console.error('Error fetching supplier:', err);
+        setError(isRTL ? 'فشل في تحميل بيانات المورد' : 'Failed to load supplier data');
+        setIsProfileLoading(false);
+        router.setParams({ viewMode: undefined, id: undefined });
       }
     };
     
-    handleProfileNavigation();
-  }, [params.viewMode, params.id, canViewProfile, isRTL, suppliers]);
+    loadProfile();
+  }, [params.viewMode, params.id, canViewProfile]);
 
   const handleDeleteSupplier = useCallback((supplierId: string) => {
     deleteMutation.mutate(supplierId);
