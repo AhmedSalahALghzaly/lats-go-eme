@@ -263,14 +263,32 @@ export default function SuppliersScreen() {
 
   // Handle URL params for direct navigation to profile
   useEffect(() => {
-    if (params.viewMode === 'profile' && params.id && suppliers.length > 0) {
-      const supplier = suppliers.find((s) => s.id === params.id);
-      if (supplier) {
-        setSelectedSupplier(supplier);
-        setViewMode('profile');
+    const handleProfileNavigation = async () => {
+      if (params.viewMode === 'profile' && params.id) {
+        // First check if supplier exists in current data
+        let supplier = suppliers.find((s) => s.id === params.id);
+        
+        // If not found and we have data, try fetching directly
+        if (!supplier && !isLoading) {
+          try {
+            const res = await supplierApi.getById(params.id);
+            if (res.data) {
+              supplier = res.data;
+            }
+          } catch (err) {
+            console.error('Error fetching supplier:', err);
+          }
+        }
+        
+        if (supplier) {
+          setSelectedSupplier(supplier);
+          setViewMode('profile');
+        }
       }
-    }
-  }, [params.viewMode, params.id, suppliers]);
+    };
+    
+    handleProfileNavigation();
+  }, [params.viewMode, params.id, suppliers, isLoading]);
 
   const resetForm = useCallback(() => {
     setFormData({
