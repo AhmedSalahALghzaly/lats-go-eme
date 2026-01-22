@@ -971,3 +971,62 @@ agent_communication:
       - Edit functionality redirects to add-entity-form with id parameter
       - Maintained existing profile navigation from product/car detail pages
       - Code is linted and ready for testing
+
+  - task: "Professional UI/UX Overhaul & Permission Logic for Entity Management"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/owner/suppliers.tsx, frontend/app/owner/distributors.tsx, frontend/app/product/[id].tsx, frontend/app/car/[id].tsx, frontend/src/components/ui/GoldenGlowText.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Implemented Professional UI/UX Overhaul with RBAC:
+          
+          1. **Navigation & Permission Logic (RBAC)**:
+             - Only users with roles 'owner', 'admin', 'partner', or 'subscriber' can view profile details
+             - Customer role triggers Golden Glow Animation instead of navigating
+             - Created canViewEntityProfile() helper function for role checking
+          
+          2. **Golden Glow Animation** (3x flash between Gold #FFD700 and White #FFFFFF):
+             - Created GoldenGlowText.tsx reusable component
+             - Implemented in suppliers.tsx, distributors.tsx, product/[id].tsx, car/[id].tsx
+             - Uses react-native-reanimated interpolateColor for smooth transitions
+             - 500ms per cycle (250ms to gold, 250ms to white) × 3 cycles
+             - Includes haptic feedback (Warning notification)
+          
+          3. **Modern Profile UI Design**:
+             - Interactive Contact Fields with Luminous Blue (#00D4FF) highlighting
+             - Phone: Opens dialer via Linking.openURL('tel:...')
+             - Email: Opens mail client via Linking.openURL('mailto:...')
+             - Website: Opens browser via Linking.openURL('https://...')
+             - Hero image container with image counter
+             - Horizontal scrollable image gallery with thumbnails
+             - Performance rating display (distributors)
+             - Distribution regions chips (distributors)
+          
+          4. **Linked Brands Display**:
+             - AnimatedBrandCard component (Home Screen style)
+             - Circular logo with brand image
+             - Clickable cards navigating to brand search page
+             - Horizontal scrollable strip
+          
+          5. **Code Cleanup**:
+             - Removed all viewMode === 'add' and viewMode === 'edit' blocks
+             - Removed formData, createMutation, updateMutation
+             - ViewMode type only includes 'list' | 'profile'
+          
+          6. **RTL Support**: Full Arabic support maintained throughout
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Professional UI/UX Overhaul Complete:
+      - RBAC implemented: owner/admin/partner/subscriber can view profiles
+      - Golden Glow animation triggers for restricted users (customers)
+      - Luminous Blue contact fields with click actions
+      - Image gallery with thumbnails
+      - AnimatedBrandCard for linked brands
+      - All services running and bundling successfully
