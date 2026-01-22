@@ -982,6 +982,7 @@ export default function ProductsAdmin() {
         contentContainerStyle={styles.mainScrollContent}
         showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetch} tintColor={colors.primary} />}
       >
         {/* Form Section - OUTSIDE FlashList to prevent focus loss */}
@@ -998,10 +999,8 @@ export default function ProductsAdmin() {
           />
         </View>
 
-        {/* Products List Section */}
-        <View style={styles.productsListSection}>
-          {ListHeader()}
-          
+        {/* Products List Section - Using FlashList inside fixed height container */}
+        <View style={[styles.productsListContainer, { minHeight: 400 }]}>
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
@@ -1014,29 +1013,18 @@ export default function ProductsAdmin() {
               </Text>
             </View>
           ) : (
-            <View style={styles.productsList}>
-              {productsWithDisplayData.map((product) => (
-                <ProductItem
-                  key={product.id}
-                  product={product}
-                  colors={colors}
-                  language={language}
-                  brandName={product._brandName}
-                  categoryName={product._categoryName}
-                  carModelNames={product._carModelNames}
-                  quantityValue={quantityInputs[product.id] || '0'}
-                  isUpdatingQuantity={updatingQuantityId === product.id}
-                  onQuantityChange={(value) => handleQuantityInputChange(product.id, value)}
-                  onUpdateQuantity={() => handleUpdateQuantity(product.id)}
-                  onEdit={() => handleEditProduct(product)}
-                  onDelete={() => openDeleteConfirm(product)}
-                />
-              ))}
-            </View>
+            <FlashList
+              data={productsWithDisplayData}
+              renderItem={renderProductItem}
+              keyExtractor={(item) => item.id}
+              estimatedItemSize={200}
+              extraData={{ quantityInputs, updatingQuantityId }}
+              scrollEnabled={false}
+            />
           )}
-          
-          <View style={{ height: insets.bottom + 40 }} />
         </View>
+        
+        <View style={{ height: insets.bottom + 40 }} />
       </ScrollView>
 
       {/* Delete Confirmation Modal */}
