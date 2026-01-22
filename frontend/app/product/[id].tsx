@@ -386,7 +386,7 @@ export default function ProductDetailScreen() {
         {product.supplier && (
           <TouchableOpacity
             style={[styles.supplierButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push(`/owner/add-entity-form?entityType=supplier&id=${product.supplier.id}`)}
+            onPress={() => router.push(`/owner/suppliers?viewMode=profile&id=${product.supplier.id}`)}
             activeOpacity={0.85}
           >
             <View style={styles.supplierContent}>
