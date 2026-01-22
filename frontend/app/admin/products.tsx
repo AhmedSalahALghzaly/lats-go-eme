@@ -961,8 +961,8 @@ export default function ProductsAdmin() {
           />
         </View>
 
-        {/* Products List Section - Using FlashList inside fixed height container */}
-        <View style={[styles.productsListContainer, { minHeight: 400 }]}>
+        {/* Products List Section - Using map() since FlashList doesn't work inside ScrollView */}
+        <View style={styles.productsListContainer}>
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
@@ -975,14 +975,25 @@ export default function ProductsAdmin() {
               </Text>
             </View>
           ) : (
-            <FlashList
-              data={productsWithDisplayData}
-              renderItem={renderProductItem}
-              keyExtractor={(item) => item.id}
-              estimatedItemSize={200}
-              extraData={{ quantityInputs, updatingQuantityId }}
-              scrollEnabled={false}
-            />
+            <View>
+              {productsWithDisplayData.map((product: any) => (
+                <ProductItem
+                  key={product.id}
+                  product={product}
+                  colors={colors}
+                  language={language}
+                  brandName={product._brandName}
+                  categoryName={product._categoryName}
+                  carModelNames={product._carModelNames}
+                  quantityValue={quantityInputs[product.id] || '0'}
+                  isUpdatingQuantity={updatingQuantityId === product.id}
+                  onQuantityChange={(value) => handleQuantityInputChange(product.id, value)}
+                  onUpdateQuantity={() => handleUpdateQuantity(product.id)}
+                  onEdit={() => handleEditProduct(product)}
+                  onDelete={() => openDeleteConfirm(product)}
+                />
+              ))}
+            </View>
           )}
         </View>
         
