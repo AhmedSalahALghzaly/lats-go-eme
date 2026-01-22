@@ -293,10 +293,24 @@ export default function DistributorsScreen() {
   // Handle URL params for direct navigation to profile
   useEffect(() => {
     const handleProfileNavigation = async () => {
-      if (params.viewMode === 'profile' && params.id && canViewProfile) {
+      // Check for viewMode=profile in URL params
+      if (params.viewMode === 'profile' && params.id) {
+        // Handle restricted users - trigger golden glow
+        if (!canViewProfile) {
+          triggerGoldenGlow();
+          // Clear URL params and stay on list
+          router.setParams({ viewMode: undefined, id: undefined });
+          return;
+        }
+        
+        // Set loading state immediately
+        setIsProfileLoading(true);
+        
+        // First check if distributor exists in current data
         let distributor = distributors.find((d) => d.id === params.id);
         
-        if (!distributor && !isLoading) {
+        // If not found in cache, fetch directly from API
+        if (!distributor) {
           try {
             const res = await distributorApi.getById(params.id);
             if (res.data) {
@@ -304,18 +318,29 @@ export default function DistributorsScreen() {
             }
           } catch (err) {
             console.error('Error fetching distributor:', err);
+            setError(isRTL ? 'فشل في تحميل بيانات الموزع' : 'Failed to load distributor data');
+            setIsProfileLoading(false);
+            router.setParams({ viewMode: undefined, id: undefined });
+            return;
           }
         }
         
         if (distributor) {
           setSelectedDistributor(distributor);
+          setSelectedGalleryImage(0);
           setViewMode('profile');
+        } else {
+          // Distributor not found
+          setError(isRTL ? 'الموزع غير موجود' : 'Distributor not found');
+          router.setParams({ viewMode: undefined, id: undefined });
         }
+        
+        setIsProfileLoading(false);
       }
     };
     
     handleProfileNavigation();
-  }, [params.viewMode, params.id, distributors, isLoading, canViewProfile]);
+  }, [params.viewMode, params.id, canViewProfile, isRTL]);
 
   const handleDeleteDistributor = useCallback((distributorId: string) => {
     deleteMutation.mutate(distributorId);
@@ -325,7 +350,9 @@ export default function DistributorsScreen() {
     setSelectedDistributor(distributor);
     setSelectedGalleryImage(0);
     setViewMode('profile');
-  }, []);
+    // Sync URL with UI state
+    router.setParams({ viewMode: 'profile', id: distributor.id });
+  }, [router]);
 
   const onRefresh = useCallback(() => {
     refetch();
