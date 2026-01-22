@@ -1,7 +1,13 @@
 /**
- * Distributors Management - Refactored with TanStack Query + FlashList
- * High-performance, stable architecture with optimistic updates
- * REFACTORED: Removed legacy add/edit forms - now using unified add-entity-form route
+ * Distributors Management - Professional UI/UX with RBAC
+ * Features:
+ * - Role-Based Access Control (owner, admin, partner, subscriber can view)
+ * - Golden Glow Animation for customer restrictions
+ * - Luminous Blue contact fields
+ * - Image Gallery with horizontal scroll
+ * - AnimatedBrandCard for linked brands
+ * - Performance rating display
+ * - Regions chips
  */
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
@@ -12,16 +18,27 @@ import {
   TouchableOpacity,
   TextInput,
   RefreshControl,
-  Image,
-  Linking,
   ActivityIndicator,
+  Linking,
+  Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+  interpolateColor,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../../src/store/appStore';
 import { useTheme } from '../../src/hooks/useTheme';
 import { distributorApi } from '../../src/services/api';
@@ -29,8 +46,12 @@ import { VoidDeleteGesture } from '../../src/components/ui/VoidDeleteGesture';
 import { ErrorCapsule } from '../../src/components/ui/ErrorCapsule';
 import { ConfettiEffect } from '../../src/components/ui/ConfettiEffect';
 import { Toast } from '../../src/components/ui/FormFeedback';
-import { BrandCardHorizontal } from '../../src/components/BrandCardHorizontal';
+import { AnimatedBrandCard } from '../../src/components/AnimatedBrandCard';
 import { queryKeys } from '../../src/lib/queryClient';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const LUMINOUS_BLUE = '#00D4FF';
+const GOLD_COLOR = '#FFD700';
 
 type ViewMode = 'list' | 'profile';
 
@@ -47,6 +68,7 @@ interface Distributor {
   contact_email?: string;
   profile_image?: string;
   images?: string[];
+  slider_images?: string[];
   linked_brands?: string[];
   linked_product_brand_ids?: string[];
   regions?: string[];
@@ -54,36 +76,54 @@ interface Distributor {
   created_at?: string;
 }
 
-// Memoized Distributor List Item
+// Check if user can view entity profiles
+const canViewEntityProfile = (userRole?: string, subscriptionStatus?: string): boolean => {
+  const allowedRoles = ['owner', 'admin', 'partner', 'subscriber'];
+  return allowedRoles.includes(userRole || '') || subscriptionStatus === 'subscriber';
+};
+
+// Memoized Distributor List Item with RBAC
 const DistributorListItem = React.memo(({
   distributor,
   colors,
   isRTL,
   language,
   isOwnerOrAdmin,
+  canViewProfile,
   onPress,
   onDelete,
+  onRestrictedPress,
 }: {
   distributor: Distributor;
   colors: any;
   isRTL: boolean;
   language: string;
   isOwnerOrAdmin: boolean;
+  canViewProfile: boolean;
   onPress: (distributor: Distributor) => void;
   onDelete: (id: string) => void;
+  onRestrictedPress: () => void;
 }) => {
   const displayName = isRTL && distributor.name_ar ? distributor.name_ar : distributor.name;
+  
+  const handlePress = () => {
+    if (canViewProfile) {
+      onPress(distributor);
+    } else {
+      onRestrictedPress();
+    }
+  };
   
   return (
     <VoidDeleteGesture onDelete={() => onDelete(distributor.id)} enabled={isOwnerOrAdmin}>
       <TouchableOpacity
         style={[styles.distributorCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => onPress(distributor)}
+        onPress={handlePress}
         activeOpacity={0.7}
       >
         <View style={[styles.distributorCardContent, isRTL && styles.cardRTL]}>
           {distributor.profile_image ? (
-            <Image source={{ uri: distributor.profile_image }} style={styles.distributorImage} />
+            <Image source={{ uri: distributor.profile_image }} style={styles.distributorImage} contentFit="cover" />
           ) : (
             <View style={[styles.distributorImagePlaceholder, { backgroundColor: colors.primary + '20' }]}>
               <Ionicons name="storefront" size={28} color={colors.primary} />
@@ -135,15 +175,23 @@ export default function DistributorsScreen() {
   const language = useAppStore((state) => state.language);
   const productBrands = useAppStore((state) => state.productBrands);
   const user = useAppStore((state) => state.user);
+  const userRole = useAppStore((state) => state.userRole);
+  const subscriptionStatus = useAppStore((state) => state.subscriptionStatus);
   const isRTL = language === 'ar';
   
-  const isOwnerOrAdmin = user?.role === 'owner' || user?.role === 'admin' || user?.is_admin;
+  const isOwnerOrAdmin = userRole === 'owner' || userRole === 'admin' || user?.is_admin;
+  const canViewProfile = canViewEntityProfile(userRole, subscriptionStatus);
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [error, setError] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState(0);
+
+  // Golden Glow Animation State
+  const [isGlowing, setIsGlowing] = useState(false);
+  const glowProgress = useSharedValue(0);
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
@@ -186,6 +234,34 @@ export default function DistributorsScreen() {
     setToastVisible(true);
   }, []);
 
+  // Golden Glow Animation for restricted access
+  const triggerGoldenGlow = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setIsGlowing(true);
+    
+    const flashDuration = 250;
+    glowProgress.value = withSequence(
+      withTiming(1, { duration: flashDuration, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0, { duration: flashDuration, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: flashDuration, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0, { duration: flashDuration, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: flashDuration, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0, { duration: flashDuration, easing: Easing.inOut(Easing.ease) }, () => {
+        runOnJS(setIsGlowing)(false);
+      })
+    );
+  }, []);
+
+  const glowTextStyle = useAnimatedStyle(() => {
+    return {
+      color: interpolateColor(
+        glowProgress.value,
+        [0, 1],
+        ['#FFFFFF', GOLD_COLOR]
+      ),
+    };
+  });
+
   // Delete Mutation with Optimistic Update
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -195,11 +271,9 @@ export default function DistributorsScreen() {
     onMutate: async (deletedId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.distributors.all });
       const previousDistributors = queryClient.getQueryData(queryKeys.distributors.all);
-
       queryClient.setQueryData(queryKeys.distributors.all, (old: Distributor[] | undefined) =>
         old ? old.filter(d => d.id !== deletedId) : []
       );
-
       return { previousDistributors };
     },
     onSuccess: () => {
@@ -218,11 +292,9 @@ export default function DistributorsScreen() {
   // Handle URL params for direct navigation to profile
   useEffect(() => {
     const handleProfileNavigation = async () => {
-      if (params.viewMode === 'profile' && params.id) {
-        // First check if distributor exists in current data
+      if (params.viewMode === 'profile' && params.id && canViewProfile) {
         let distributor = distributors.find((d) => d.id === params.id);
         
-        // If not found and we have data, try fetching directly
         if (!distributor && !isLoading) {
           try {
             const res = await distributorApi.getById(params.id);
@@ -242,7 +314,7 @@ export default function DistributorsScreen() {
     };
     
     handleProfileNavigation();
-  }, [params.viewMode, params.id, distributors, isLoading]);
+  }, [params.viewMode, params.id, distributors, isLoading, canViewProfile]);
 
   const handleDeleteDistributor = useCallback((distributorId: string) => {
     deleteMutation.mutate(distributorId);
@@ -250,6 +322,7 @@ export default function DistributorsScreen() {
 
   const openProfileMode = useCallback((distributor: Distributor) => {
     setSelectedDistributor(distributor);
+    setSelectedGalleryImage(0);
     setViewMode('profile');
   }, []);
 
@@ -257,14 +330,18 @@ export default function DistributorsScreen() {
     refetch();
   }, [refetch]);
 
-  // ============================================================================
-  // CRITICAL: All useCallback hooks must be defined BEFORE any conditional returns
-  // ============================================================================
-  
+  // Get all images for gallery
+  const getDistributorImages = (distributor: Distributor): string[] => {
+    const images: string[] = [];
+    if (distributor.profile_image) images.push(distributor.profile_image);
+    if (distributor.slider_images?.length) images.push(...distributor.slider_images);
+    if (distributor.images?.length) images.push(...distributor.images.filter(img => img !== distributor.profile_image));
+    return [...new Set(images)]; // Remove duplicates
+  };
+
   // List Header Component
   const ListHeaderComponent = useCallback(() => (
     <View>
-      {/* Header */}
       <View style={[styles.listHeader, { paddingTop: insets.top }]}>
         <View style={[styles.headerRow, isRTL && styles.headerRTL]}>
           <TouchableOpacity 
@@ -290,7 +367,7 @@ export default function DistributorsScreen() {
         <View style={[styles.searchContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            style={[styles.searchInput, { color: colors.text }, isRTL && styles.textRTL]}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder={isRTL ? 'ابحث عن موزع...' : 'Search distributors...'}
@@ -310,9 +387,30 @@ export default function DistributorsScreen() {
             {isRTL ? 'إجمالي الموزعين' : 'Total Distributors'}
           </Text>
         </View>
+
+        {/* Subscribe Banner for restricted users */}
+        {!canViewProfile && (
+          <TouchableOpacity 
+            style={styles.subscribeBannerWrapper}
+            onPress={() => router.push('/subscription-request')}
+          >
+            <LinearGradient
+              colors={['#1a1a2e', '#2d2d44']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.subscribeBanner}
+            >
+              <Ionicons name="star" size={18} color={GOLD_COLOR} />
+              <Animated.Text style={[styles.subscribeBannerText, glowTextStyle]}>
+                {isRTL ? 'اشترك للتواصل مع الموزعين' : 'Subscribe to contact distributors'}
+              </Animated.Text>
+              <Ionicons name="star" size={18} color={GOLD_COLOR} />
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
-  ), [insets.top, isRTL, colors, isOwnerOrAdmin, searchQuery, filteredDistributors.length, router]);
+  ), [insets.top, isRTL, colors, isOwnerOrAdmin, searchQuery, filteredDistributors.length, router, canViewProfile, glowTextStyle]);
 
   // Empty component
   const ListEmptyComponent = useCallback(() => (
@@ -341,18 +439,18 @@ export default function DistributorsScreen() {
       isRTL={isRTL}
       language={language}
       isOwnerOrAdmin={isOwnerOrAdmin}
+      canViewProfile={canViewProfile}
       onPress={openProfileMode}
       onDelete={handleDeleteDistributor}
+      onRestrictedPress={triggerGoldenGlow}
     />
-  ), [colors, isRTL, language, isOwnerOrAdmin, openProfileMode, handleDeleteDistributor]);
+  ), [colors, isRTL, language, isOwnerOrAdmin, canViewProfile, openProfileMode, handleDeleteDistributor, triggerGoldenGlow]);
 
   const keyExtractor = useCallback((item: Distributor) => item.id, []);
 
   // ============================================================================
-  // NOW we can have conditional returns (after all hooks are defined)
+  // Profile View with Modern UI
   // ============================================================================
-
-  // Profile View
   if (viewMode === 'profile' && selectedDistributor) {
     const linkedBrandObjects = productBrands.filter((b: any) => 
       (selectedDistributor.linked_product_brand_ids || selectedDistributor.linked_brands || []).includes(b.id)
@@ -360,6 +458,7 @@ export default function DistributorsScreen() {
     const displayName = isRTL && selectedDistributor.name_ar ? selectedDistributor.name_ar : selectedDistributor.name;
     const displayAddress = isRTL && selectedDistributor.address_ar ? selectedDistributor.address_ar : selectedDistributor.address;
     const displayDescription = isRTL && selectedDistributor.description_ar ? selectedDistributor.description_ar : selectedDistributor.description;
+    const galleryImages = getDistributorImages(selectedDistributor);
 
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -383,21 +482,57 @@ export default function DistributorsScreen() {
             )}
           </View>
 
-          {/* Profile Image */}
-          <View style={styles.profileImageContainerThemed}>
-            {selectedDistributor.profile_image ? (
-              <Image source={{ uri: selectedDistributor.profile_image }} style={styles.profileImageThemed} />
+          {/* Profile Image - Large Hero */}
+          <View style={styles.heroImageContainer}>
+            {galleryImages.length > 0 ? (
+              <Image 
+                source={{ uri: galleryImages[selectedGalleryImage] }} 
+                style={styles.heroImage}
+                contentFit="cover"
+                transition={200}
+              />
             ) : (
-              <View style={[styles.profileImagePlaceholder, { backgroundColor: colors.surface }]}>
-                <Ionicons name="storefront" size={60} color={colors.textSecondary} />
+              <View style={[styles.heroImagePlaceholder, { backgroundColor: colors.surface }]}>
+                <Ionicons name="storefront" size={80} color={colors.textSecondary} />
+              </View>
+            )}
+            {/* Image Counter */}
+            {galleryImages.length > 1 && (
+              <View style={styles.imageCounter}>
+                <Text style={styles.imageCounterText}>
+                  {selectedGalleryImage + 1}/{galleryImages.length}
+                </Text>
               </View>
             )}
           </View>
 
+          {/* Image Gallery Thumbnails */}
+          {galleryImages.length > 1 && (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={styles.galleryContainer}
+              contentContainerStyle={styles.galleryContent}
+            >
+              {galleryImages.map((img, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.galleryThumbnail,
+                    { borderColor: selectedGalleryImage === index ? LUMINOUS_BLUE : 'transparent' }
+                  ]}
+                  onPress={() => setSelectedGalleryImage(index)}
+                >
+                  <Image source={{ uri: img }} style={styles.thumbnailImage} contentFit="cover" />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
           {/* Performance Rating */}
           {selectedDistributor.performance_rating !== undefined && (
             <View style={[styles.ratingSection, { backgroundColor: colors.warning + '15' }]}>
-              <Ionicons name="star" size={24} color={colors.warning} />
+              <Ionicons name="star" size={28} color={colors.warning} />
               <Text style={[styles.ratingSectionText, { color: colors.warning }]}>
                 {selectedDistributor.performance_rating.toFixed(1)} / 5.0
               </Text>
@@ -411,11 +546,12 @@ export default function DistributorsScreen() {
           {selectedDistributor.regions && selectedDistributor.regions.length > 0 && (
             <View style={styles.regionsSection}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isRTL ? 'المناطق' : 'Regions'}
+                {isRTL ? 'مناطق التوزيع' : 'Distribution Regions'}
               </Text>
               <View style={styles.regionChips}>
                 {selectedDistributor.regions.map((region, index) => (
                   <View key={index} style={[styles.regionChip, { backgroundColor: colors.primary + '20' }]}>
+                    <Ionicons name="location" size={14} color={colors.primary} />
                     <Text style={[styles.regionChipText, { color: colors.primary }]}>{region}</Text>
                   </View>
                 ))}
@@ -423,40 +559,89 @@ export default function DistributorsScreen() {
             </View>
           )}
 
-          {/* Info Cards */}
-          <View style={styles.infoSection}>
+          {/* Interactive Contact Fields - Luminous Blue */}
+          <View style={styles.contactSection}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              {isRTL ? 'معلومات التواصل' : 'Contact Information'}
+            </Text>
+            
             {selectedDistributor.phone && (
               <TouchableOpacity
-                style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[styles.contactCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => Linking.openURL(`tel:${selectedDistributor.phone}`)}
+                activeOpacity={0.7}
               >
-                <Ionicons name="call" size={22} color={colors.primary} />
-                <Text style={[styles.infoCardText, { color: colors.text }]}>{selectedDistributor.phone}</Text>
+                <View style={[styles.contactIconContainer, { backgroundColor: LUMINOUS_BLUE + '20' }]}>
+                  <Ionicons name="call" size={22} color={LUMINOUS_BLUE} />
+                </View>
+                <View style={styles.contactTextContainer}>
+                  <Text style={[styles.contactLabel, { color: colors.textSecondary }]}>
+                    {isRTL ? 'الهاتف' : 'Phone'}
+                  </Text>
+                  <Text style={[styles.contactValue, { color: LUMINOUS_BLUE }]}>
+                    {selectedDistributor.phone}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={LUMINOUS_BLUE} />
               </TouchableOpacity>
             )}
-            {displayAddress && (
-              <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Ionicons name="location" size={22} color={colors.primary} />
-                <Text style={[styles.infoCardText, { color: colors.text }]}>{displayAddress}</Text>
-              </View>
-            )}
+
             {selectedDistributor.contact_email && (
               <TouchableOpacity
-                style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[styles.contactCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => Linking.openURL(`mailto:${selectedDistributor.contact_email}`)}
+                activeOpacity={0.7}
               >
-                <Ionicons name="mail" size={22} color={colors.primary} />
-                <Text style={[styles.infoCardText, { color: colors.text }]}>{selectedDistributor.contact_email}</Text>
+                <View style={[styles.contactIconContainer, { backgroundColor: LUMINOUS_BLUE + '20' }]}>
+                  <Ionicons name="mail" size={22} color={LUMINOUS_BLUE} />
+                </View>
+                <View style={styles.contactTextContainer}>
+                  <Text style={[styles.contactLabel, { color: colors.textSecondary }]}>
+                    {isRTL ? 'البريد الإلكتروني' : 'Email'}
+                  </Text>
+                  <Text style={[styles.contactValue, { color: LUMINOUS_BLUE }]}>
+                    {selectedDistributor.contact_email}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={LUMINOUS_BLUE} />
               </TouchableOpacity>
             )}
+
             {selectedDistributor.website && (
               <TouchableOpacity
-                style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[styles.contactCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => Linking.openURL(selectedDistributor.website!.startsWith('http') ? selectedDistributor.website! : `https://${selectedDistributor.website}`)}
+                activeOpacity={0.7}
               >
-                <Ionicons name="globe" size={22} color={colors.primary} />
-                <Text style={[styles.infoCardText, { color: colors.text }]}>{selectedDistributor.website}</Text>
+                <View style={[styles.contactIconContainer, { backgroundColor: LUMINOUS_BLUE + '20' }]}>
+                  <Ionicons name="globe" size={22} color={LUMINOUS_BLUE} />
+                </View>
+                <View style={styles.contactTextContainer}>
+                  <Text style={[styles.contactLabel, { color: colors.textSecondary }]}>
+                    {isRTL ? 'الموقع الإلكتروني' : 'Website'}
+                  </Text>
+                  <Text style={[styles.contactValue, { color: LUMINOUS_BLUE }]} numberOfLines={1}>
+                    {selectedDistributor.website}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={LUMINOUS_BLUE} />
               </TouchableOpacity>
+            )}
+
+            {displayAddress && (
+              <View style={[styles.contactCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.contactIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                  <Ionicons name="location" size={22} color={colors.primary} />
+                </View>
+                <View style={styles.contactTextContainer}>
+                  <Text style={[styles.contactLabel, { color: colors.textSecondary }]}>
+                    {isRTL ? 'العنوان' : 'Address'}
+                  </Text>
+                  <Text style={[styles.contactValue, { color: colors.text }]}>
+                    {displayAddress}
+                  </Text>
+                </View>
+              </View>
             )}
           </View>
 
@@ -464,25 +649,40 @@ export default function DistributorsScreen() {
           {displayDescription && (
             <View style={[styles.descriptionSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isRTL ? 'الوصف' : 'Description'}
+                {isRTL ? 'نبذة عن الموزع' : 'About'}
               </Text>
-              <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{displayDescription}</Text>
+              <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
+                {displayDescription}
+              </Text>
             </View>
           )}
 
-          {/* Linked Brands */}
+          {/* Linked Brands - AnimatedBrandCard Style */}
           {linkedBrandObjects.length > 0 && (
             <View style={styles.brandsSection}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 {isRTL ? 'الماركات المرتبطة' : 'Linked Brands'}
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.brandsScroll}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                style={styles.brandsScroll}
+                contentContainerStyle={styles.brandsContent}
+              >
                 {linkedBrandObjects.map((brand: any) => (
-                  <BrandCardHorizontal key={brand.id} brand={brand} />
+                  <AnimatedBrandCard
+                    key={brand.id}
+                    brand={brand}
+                    type="product"
+                    onPress={() => router.push(`/search?product_brand_id=${brand.id}`)}
+                  />
                 ))}
               </ScrollView>
             </View>
           )}
+
+          {/* Bottom Padding */}
+          <View style={{ height: 40 }} />
         </ScrollView>
 
         <Toast
@@ -514,7 +714,7 @@ export default function DistributorsScreen() {
             tintColor={colors.primary}
           />
         }
-        extraData={[colors, searchQuery]}
+        extraData={[colors, searchQuery, isGlowing]}
       />
 
       {error && (
@@ -561,9 +761,20 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
-  statsCard: { borderRadius: 16, padding: 20, alignItems: 'center' },
+  textRTL: { textAlign: 'right' },
+  statsCard: { borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 16 },
   statsValue: { fontSize: 32, fontWeight: '700', color: '#FFF' },
   statsLabel: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  subscribeBannerWrapper: { marginBottom: 16, borderRadius: 12, overflow: 'hidden' },
+  subscribeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  subscribeBannerText: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
   distributorCard: { borderRadius: 12, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
   distributorCardContent: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   cardRTL: { flexDirection: 'row-reverse' },
@@ -580,26 +791,68 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', padding: 60 },
   emptyText: { fontSize: 16, marginTop: 16 },
   // Profile styles
-  profileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 20 },
+  profileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 16 },
   profileBackButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   profileHeaderTitle: { fontSize: 20, fontWeight: '700', flex: 1, textAlign: 'center' },
   profileEditButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  profileImageContainerThemed: { alignItems: 'center', marginBottom: 24 },
-  profileImageThemed: { width: 120, height: 120, borderRadius: 60 },
-  profileImagePlaceholder: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center' },
-  ratingSection: { marginHorizontal: 16, padding: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
-  ratingSectionText: { fontSize: 24, fontWeight: '700' },
+  // Hero Image
+  heroImageContainer: { width: '100%', height: 240, position: 'relative' },
+  heroImage: { width: '100%', height: '100%' },
+  heroImagePlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+  imageCounter: { 
+    position: 'absolute', 
+    bottom: 12, 
+    right: 12, 
+    backgroundColor: 'rgba(0,0,0,0.6)', 
+    paddingHorizontal: 10, 
+    paddingVertical: 4, 
+    borderRadius: 12 
+  },
+  imageCounterText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+  // Gallery
+  galleryContainer: { marginTop: 12, paddingHorizontal: 16 },
+  galleryContent: { gap: 10 },
+  galleryThumbnail: { width: 70, height: 70, borderRadius: 10, borderWidth: 2, overflow: 'hidden' },
+  thumbnailImage: { width: '100%', height: '100%' },
+  // Rating Section
+  ratingSection: { 
+    marginHorizontal: 16, 
+    marginTop: 20, 
+    padding: 16, 
+    borderRadius: 14, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 10 
+  },
+  ratingSectionText: { fontSize: 26, fontWeight: '800' },
   ratingSectionLabel: { fontSize: 14 },
-  regionsSection: { paddingHorizontal: 16, marginBottom: 20 },
-  regionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  regionChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 4 },
-  regionChipText: { fontSize: 14 },
-  infoSection: { paddingHorizontal: 16, gap: 12 },
-  infoCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1, gap: 12 },
-  infoCardText: { fontSize: 15, flex: 1 },
-  descriptionSection: { marginHorizontal: 16, marginTop: 20, padding: 16, borderRadius: 12, borderWidth: 1 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  // Regions
+  regionsSection: { paddingHorizontal: 16, marginTop: 20 },
+  regionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 },
+  regionChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, gap: 6 },
+  regionChipText: { fontSize: 14, fontWeight: '600' },
+  // Contact Section
+  contactSection: { paddingHorizontal: 16, marginTop: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
+  contactCard: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 14, 
+    borderRadius: 14, 
+    borderWidth: 1, 
+    marginBottom: 12,
+    gap: 12,
+  },
+  contactIconContainer: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  contactTextContainer: { flex: 1 },
+  contactLabel: { fontSize: 12, fontWeight: '500', marginBottom: 2 },
+  contactValue: { fontSize: 15, fontWeight: '600' },
+  // Description
+  descriptionSection: { marginHorizontal: 16, marginTop: 24, padding: 16, borderRadius: 14, borderWidth: 1 },
   descriptionText: { fontSize: 14, lineHeight: 22 },
-  brandsSection: { marginTop: 20, paddingHorizontal: 16 },
-  brandsScroll: { marginTop: 12 },
+  // Brands
+  brandsSection: { marginTop: 24, paddingHorizontal: 16 },
+  brandsScroll: { marginTop: 8 },
+  brandsContent: { paddingRight: 16 },
 });
