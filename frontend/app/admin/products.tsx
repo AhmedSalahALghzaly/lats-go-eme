@@ -472,7 +472,7 @@ const ProductFormHeader = memo(({
         </View>
 
         {/* Section 3: Product Images */}
-        <View style={[styles.formSection, { borderColor: colors.border }]}>
+        <View style={[styles.formSectionInner, { borderColor: colors.border }]}>
           <Text style={[styles.sectionLabel, { color: colors.primary }]}>
             <Ionicons name="images" size={14} /> {language === 'ar' ? 'صور المنتج' : 'Product Images'}
           </Text>
