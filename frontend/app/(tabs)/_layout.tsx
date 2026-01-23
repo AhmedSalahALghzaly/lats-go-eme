@@ -226,11 +226,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   ownerButton: {
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
+    ...createShadow('#8B5CF6', 0, 4, 0.4, 8, 8),
   },
   ownerButtonGradient: {
     width: 56,
