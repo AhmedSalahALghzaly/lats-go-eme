@@ -7,7 +7,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAppStore } from '../store/appStore';
 import { favoritesApi } from '../services/api';
-import { AnimatedFavoriteButton, AnimatedCartButton } from './AnimatedIconButton';
+import { AnimatedFavoriteButton, AnimatedCartButton, AnimatedCartButtonRef } from './AnimatedIconButton';
 import { useBundleProducts } from '../hooks/queries/useBundleProducts';
 import { useCartMutations } from '../hooks/queries/useShoppingHubQuery';
 import * as Haptics from 'expo-haptics';
