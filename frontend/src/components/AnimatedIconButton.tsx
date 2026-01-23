@@ -444,18 +444,49 @@ export const AnimatedFavoriteButton: React.FC<{
 };
 
 // Specialized Cart Button - Futuristic with gradient and glow
-export const AnimatedCartButton: React.FC<{
-  isInCart?: boolean;
-  isLoading?: boolean;
-  onPress: () => void;
-  size?: number;
-  primaryColor?: string;
-  style?: ViewStyle;
-}> = ({ isInCart = false, isLoading = false, onPress, size = 20, primaryColor = '#3B82F6', style }) => {
+// Enhanced with forwardRef to expose triggerShake function for external control
+export interface AnimatedCartButtonRef {
+  triggerShake: () => void;
+}
+
+export const AnimatedCartButton = React.forwardRef<
+  AnimatedCartButtonRef,
+  {
+    isInCart?: boolean;
+    isLoading?: boolean;
+    onPress: () => void;
+    size?: number;
+    primaryColor?: string;
+    style?: ViewStyle;
+  }
+>(({ isInCart = false, isLoading = false, onPress, size = 20, primaryColor = '#3B82F6', style }, ref) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const successPulse = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  // Expose triggerShake function via ref for external control (duplicate detection)
+  React.useImperativeHandle(ref, () => ({
+    triggerShake: () => {
+      // Shake animation sequence for duplicate prevention feedback
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 1, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -1, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 1, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -1, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 1, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -1, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      ]).start();
+    },
+  }));
+
+  // Shake rotation interpolation
+  const shakeRotation = shakeAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-15deg', '0deg', '15deg'],
+  });
 
   useEffect(() => {
     if (isInCart) {
