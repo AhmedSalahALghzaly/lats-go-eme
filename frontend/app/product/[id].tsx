@@ -76,6 +76,10 @@ export default function ProductDetailScreen() {
   const { isProductInBundle } = useBundleProducts();
   const isInBundle = id ? isProductInBundle(id) : false;
 
+  // Cart mutations with duplicate prevention
+  const queryClient = useQueryClient();
+  const { checkBundleDuplicate } = useCartMutations();
+
   // Check if user should see subscribe button (not a subscriber and no pending request)
   const showSubscribeButton = subscriptionStatus === 'none';
   
