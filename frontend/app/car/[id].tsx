@@ -620,7 +620,6 @@ export default function CarModelDetailScreen() {
                       primaryColor={colors.primary}
                     />
                   </View>
-                  </TouchableOpacity>
                 </TouchableOpacity>
               ))}
             </View>
