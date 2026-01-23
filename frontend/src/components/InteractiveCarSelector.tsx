@@ -345,11 +345,13 @@ export const InteractiveCarSelector: React.FC = () => {
     
     if (selectorState === 'collapsed') {
       vinInterval = setInterval(() => {
-        setCurrentVinIndex((prev) => (prev + 1) % VIN_CHARS.length);
-        vinShiftAnim.value = withSequence(
-          withTiming(1, { duration: 100 }),
-          withTiming(0, { duration: 100 })
-        );
+        if (isMountedRef.current) {
+          setCurrentVinIndex((prev) => (prev + 1) % VIN_CHARS.length);
+          vinShiftAnim.value = withSequence(
+            withTiming(1, { duration: 100 }),
+            withTiming(0, { duration: 100 })
+          );
+        }
       }, 800);
       
       // Enhanced chassis glow animation - Electric blue pulsing
