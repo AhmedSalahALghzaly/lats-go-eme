@@ -239,9 +239,9 @@ export const InteractiveCarSelector: React.FC = () => {
   const router = useRouter();
   const mood = useColorMood();
 
-  // Get data from store with memoized selectors
-  const carBrands = useAppStore(useCallback((state) => state.carBrands, []));
-  const carModels = useAppStore(useCallback((state) => state.carModels, []));
+  // Get data from store - using simple selectors
+  const carBrands = useAppStore((state) => state.carBrands);
+  const carModels = useAppStore((state) => state.carModels);
 
   // Local state
   const [selectorState, setSelectorState] = useState<SelectorState>('collapsed');
@@ -253,9 +253,10 @@ export const InteractiveCarSelector: React.FC = () => {
   const [chassisSearchQuery, setChassisSearchQuery] = useState('');
   const [priceFilter, setPriceFilter] = useState<PriceFilter>('all');
   
-  // Morphing icon state
+  // Morphing icon state - use refs to avoid re-renders from setInterval
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [currentVinIndex, setCurrentVinIndex] = useState(0);
+  const isMountedRef = useRef(true);
 
   // Animations
   const expandAnim = useSharedValue(0);
