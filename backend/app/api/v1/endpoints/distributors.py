@@ -74,7 +74,10 @@ async def update_distributor(distributor_id: str, data: DistributorCreate, reque
         )
     
     await manager.broadcast({"type": "sync", "tables": ["distributors", "car_brands"]})
-    return {"message": "Updated"}
+    
+    # Return the updated distributor with all fields
+    updated_distributor = await db.distributors.find_one({"_id": distributor_id})
+    return serialize_doc(updated_distributor) if updated_distributor else {"message": "Updated"}
 
 @router.delete("/{distributor_id}")
 async def delete_distributor(distributor_id: str, request: Request):
