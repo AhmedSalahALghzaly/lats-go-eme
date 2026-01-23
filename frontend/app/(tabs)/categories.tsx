@@ -14,6 +14,7 @@ import {
   Animated,
   Dimensions,
   Image,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -22,6 +23,7 @@ import { Header } from '../../src/components/Header';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useCategoriesTreeQuery } from '../../src/hooks/queries';
+import { createShadow } from '../../src/utils/shadowUtils';
 
 const { width } = Dimensions.get('window');
 
