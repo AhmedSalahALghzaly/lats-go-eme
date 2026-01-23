@@ -105,6 +105,8 @@ const SupplierListItem = React.memo(({
   onRestrictedPress: () => void;
 }) => {
   const displayName = isRTL && supplier.name_ar ? supplier.name_ar : supplier.name;
+  // Get first phone number from array or fallback to legacy phone field
+  const displayPhone = supplier.phone_numbers?.[0] || supplier.phone;
   
   const handlePress = () => {
     if (canViewProfile) {
