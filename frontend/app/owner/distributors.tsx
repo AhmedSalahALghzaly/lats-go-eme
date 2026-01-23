@@ -141,11 +141,11 @@ const DistributorListItem = React.memo(({
             <Text style={[styles.distributorName, { color: colors.text }]} numberOfLines={1}>
               {displayName}
             </Text>
-            {distributor.phone && (
+            {displayPhone && (
               <View style={[styles.distributorMeta, isRTL && styles.metaRTL]}>
                 <Ionicons name="call" size={14} color={colors.textSecondary} />
                 <Text style={[styles.distributorMetaText, { color: colors.textSecondary }]}>
-                  {distributor.phone}
+                  {displayPhone}
                 </Text>
               </View>
             )}
