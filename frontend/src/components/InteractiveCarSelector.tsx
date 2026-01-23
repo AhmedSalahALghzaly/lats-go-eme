@@ -42,8 +42,8 @@ import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAppStore, useColorMood } from '../store/appStore';
 import { productsApi } from '../services/api';
-import { DURATIONS, SPRINGS, HAPTIC_PATTERNS } from '../constants/animations';
-import { Skeleton, ProductCardSkeleton } from './ui/Skeleton';
+import { DURATIONS, HAPTIC_PATTERNS } from '../constants/animations';
+import { ProductCardSkeleton } from './ui/Skeleton';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const GRID_COLUMNS = 5;
