@@ -256,8 +256,8 @@ export function useCartMutations() {
       queryClient.invalidateQueries({ queryKey: shoppingHubKeys.cart });
     },
     onError: (error: any) => {
-      // Don't show error for bundle duplicate - already handled
-      if (error?.message === 'BUNDLE_DUPLICATE') {
+      // Don't show error for duplicate - already handled
+      if (error?.message === 'DUPLICATE_PRODUCT' || error?.message === 'BUNDLE_DUPLICATE') {
         return;
       }
       console.error('[useCartMutations] Add to cart error:', error);
