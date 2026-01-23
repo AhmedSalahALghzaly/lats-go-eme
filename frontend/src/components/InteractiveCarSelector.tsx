@@ -394,37 +394,31 @@ export const InteractiveCarSelector: React.FC = () => {
   // Expand animation with Glassmorphism
   useEffect(() => {
     if (selectorState !== 'collapsed') {
-      carIconRotate.value = withSequence(
-        withSpring(180, { damping: 12, stiffness: 100 }),
-        withSpring(360, { damping: 15, stiffness: 80 })
-      );
-      carIconScale.value = withSequence(
-        withSpring(1.3, { damping: 10, stiffness: 120 }),
-        withSpring(1.1, { damping: 15, stiffness: 100 })
-      );
+      carIconRotate.value = withSpring(360, { damping: 15, stiffness: 80 });
+      carIconScale.value = withSpring(1.1, { damping: 15, stiffness: 100 });
       pulseAnim.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 1200 }),
+          withTiming(1.05, { duration: 1200 }),
           withTiming(1, { duration: 1200 })
         ),
         -1,
         true
       );
-      glassOpacity.value = withTiming(1, { duration: 400 });
+      glassOpacity.value = 1;
     } else {
       carIconRotate.value = withSpring(0, { damping: 15, stiffness: 80 });
       carIconScale.value = withSpring(1, { damping: 15, stiffness: 80 });
       cancelAnimation(pulseAnim);
       pulseAnim.value = 1;
-      glassOpacity.value = withTiming(0, { duration: 300 });
+      glassOpacity.value = 0;
     }
   }, [selectorState]);
 
-  // Expand/collapse animation
+  // Expand/collapse and grid opacity animation
   useEffect(() => {
     if (selectorState === 'collapsed') {
-      expandAnim.value = withTiming(0, { duration: DURATIONS.transition });
-      gridOpacity.value = withTiming(0, { duration: DURATIONS.fast });
+      expandAnim.value = 0;
+      gridOpacity.value = 0;
     } else if (selectorState === 'brands' || selectorState === 'models' || selectorState === 'chassis_search') {
       expandAnim.value = withSpring(1, { damping: 15, stiffness: 90 });
       gridOpacity.value = withDelay(100, withTiming(1, { duration: DURATIONS.normal }));
@@ -436,7 +430,7 @@ export const InteractiveCarSelector: React.FC = () => {
     if (selectorState === 'products') {
       productsSlideAnim.value = withSpring(0, { damping: 18, stiffness: 90 });
     } else {
-      productsSlideAnim.value = withTiming(SCREEN_HEIGHT, { duration: DURATIONS.transition });
+      productsSlideAnim.value = SCREEN_HEIGHT;
     }
   }, [selectorState]);
 
