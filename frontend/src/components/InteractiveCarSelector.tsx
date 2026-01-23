@@ -335,41 +335,28 @@ export const InteractiveCarSelector: React.FC = () => {
     };
   }, [selectorState]);
 
-  // Expand animation with Glassmorphism
+  // Expand animation - Simplified for mobile stability
   useEffect(() => {
     if (selectorState !== 'collapsed') {
-      carIconRotate.value = withSpring(360, { damping: 15, stiffness: 80 });
+      // Simple expand animation
       carIconScale.value = withSpring(1.1, { damping: 15, stiffness: 100 });
-      pulseAnim.value = withRepeat(
-        withSequence(
-          withTiming(1.05, { duration: 1200 }),
-          withTiming(1, { duration: 1200 })
-        ),
-        -1,
-        true
-      );
-      glassOpacity.value = 1;
     } else {
-      carIconRotate.value = withSpring(0, { damping: 15, stiffness: 80 });
       carIconScale.value = withSpring(1, { damping: 15, stiffness: 80 });
-      cancelAnimation(pulseAnim);
-      pulseAnim.value = 1;
-      glassOpacity.value = 0;
     }
   }, [selectorState]);
 
-  // Expand/collapse and grid opacity animation
+  // Expand/collapse and grid opacity animation - Simplified
   useEffect(() => {
     if (selectorState === 'collapsed') {
       expandAnim.value = 0;
       gridOpacity.value = 0;
     } else if (selectorState === 'brands' || selectorState === 'models' || selectorState === 'chassis_search') {
       expandAnim.value = withSpring(1, { damping: 15, stiffness: 90 });
-      gridOpacity.value = withDelay(100, withTiming(1, { duration: DURATIONS.normal }));
+      gridOpacity.value = 1;
     }
   }, [selectorState]);
 
-  // Products slide animation
+  // Products slide animation - Simplified
   useEffect(() => {
     if (selectorState === 'products') {
       productsSlideAnim.value = withSpring(0, { damping: 18, stiffness: 90 });
