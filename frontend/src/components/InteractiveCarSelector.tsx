@@ -609,16 +609,28 @@ export const InteractiveCarSelector: React.FC = () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    
+    // Trigger 720-degree rotation animation (2 full rotations) with spring bounce effect
     if (selectorState === 'collapsed' || selectorState === 'chassis_search') {
+      // Opening animation: rotate 720 degrees with spring
+      carIconRotation.value = withSequence(
+        withTiming(720, { duration: 600 }),
+        withSpring(0, { damping: 8, stiffness: 100, mass: 0.5 })
+      );
       setSelectorState('brands');
     } else {
+      // Closing animation: rotate -720 degrees with spring
+      carIconRotation.value = withSequence(
+        withTiming(-720, { duration: 600 }),
+        withSpring(0, { damping: 8, stiffness: 100, mass: 0.5 })
+      );
       setSelectorState('collapsed');
       setSelectedBrand(null);
       setSelectedModel(null);
       setProducts([]);
       setSearchQuery('');
     }
-  }, [selectorState]);
+  }, [selectorState, carIconRotation]);
 
   const handleChassisAnchorPress = useCallback(() => {
     if (Platform.OS !== 'web') {
