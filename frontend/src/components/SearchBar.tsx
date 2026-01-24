@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -31,42 +31,44 @@ export const SearchBar: React.FC<{ onFocus?: () => void }> = ({ onFocus }) => {
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  
+  // Debounce ref for cleanup - prevents memory leaks
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const debounce = useCallback((func: Function, wait: number) => {
-    let timeout: NodeJS.Timeout;
-    return (...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  }, []);
-
-  const searchProducts = useCallback(
-    debounce(async (searchQuery: string) => {
-      if (searchQuery.length < 2) {
-        setResults(null);
-        setLoading(false);
-        return;
-      }
-
+  // Search with proper debouncing and cleanup
+  useEffect(() => {
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Don't search if query is too short
+    if (query.length < 2) {
+      setResults(null);
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    
+    // Debounce the search API call
+    debounceTimerRef.current = setTimeout(async () => {
       try {
-        const response = await productsApi.search(searchQuery);
+        const response = await productsApi.search(query);
         setResults(response.data);
       } catch (error) {
         console.error('Search error:', error);
       } finally {
         setLoading(false);
       }
-    }, 300),
-    []
-  );
-
-  useEffect(() => {
-    if (query.length >= 2) {
-      setLoading(true);
-      searchProducts(query);
-    } else {
-      setResults(null);
-    }
+    }, 300);
+    
+    // Cleanup function to clear pending timers on unmount or query change
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [query]);
 
   const handleResultPress = (type: string, item: any) => {
