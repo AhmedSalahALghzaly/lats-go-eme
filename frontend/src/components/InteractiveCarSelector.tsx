@@ -26,6 +26,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withSequence,
   interpolate,
   Extrapolation,
 } from 'react-native-reanimated';
@@ -419,6 +420,8 @@ export const InteractiveCarSelector: React.FC = () => {
   const carIconScale = useSharedValue(1);
   const carIconGlow = useSharedValue(0.5);
   const chassisIconGlow = useSharedValue(0.5);
+  // New: Rotation animation for car icon anchor (720 degrees = 2 full rotations)
+  const carIconRotation = useSharedValue(0);
 
   // Current vehicle icon
   const currentIcon = VEHICLE_ICONS[currentIconIndex];
