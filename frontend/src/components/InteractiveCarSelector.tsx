@@ -1002,7 +1002,7 @@ export const InteractiveCarSelector: React.FC = () => {
                 numColumns={3}
                 keyExtractor={keyExtractor}
                 renderItem={renderChassisItem}
-                estimatedItemSize={160}
+                estimatedItemSize={280} // Updated: 160 * 1.75 = 280 for larger chassis cards
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.chassisGridContent}
               />
