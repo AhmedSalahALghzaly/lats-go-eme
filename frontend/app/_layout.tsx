@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
-import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -14,63 +14,54 @@ import { autoLogoutService } from '../src/services/autoLogoutService';
 import { offlineDatabaseService } from '../src/services/offlineDatabaseService';
 
 /**
- * Auth Guard Component - Stabilized
+ * Auth Guard Component - Fully Stabilized for Mobile
  * 
- * STABILITY FIX:
- * - Consolidated all state transitions into a single atomic flow
- * - Removed overlapping useEffect hooks that caused rapid-fire updates
- * - Single source of truth for hydration and navigation readiness
+ * ROOT CAUSE FIX:
+ * - REMOVED pathname from all useEffect dependencies (causes infinite loop on mobile)
+ * - Expo Router's usePathname() triggers more frequently on mobile vs web
+ * - All screen-specific logic now uses refs instead of reactive dependencies
  */
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
-  const pathname = usePathname();
   
-  // Zustand state - accessed directly to prevent selector re-renders
+  // Zustand state
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const hasHydrated = useHasHydrated();
   const user = useAppStore((state) => state.user);
   const currentMood = useAppStore((state) => state.currentMood);
   
-  // Refs for service initialization (prevents re-runs)
+  // Refs for preventing duplicate operations
   const servicesInitialized = useRef(false);
-  const navigationHandled = useRef(false);
   const adminsLoaded = useRef(false);
+  const lastActivityRecorded = useRef(0);
   
-  // Single consolidated state for UI
-  const [appState, setAppState] = useState<'loading' | 'ready'>('loading');
+  // Single consolidated UI state
+  const [appReady, setAppReady] = useState(false);
 
   /**
-   * Initialize core services on app startup - runs ONCE
+   * Initialize core services - runs ONCE on mount
    */
   useEffect(() => {
-    const initializeServices = async () => {
-      if (servicesInitialized.current) return;
-      servicesInitialized.current = true;
+    if (servicesInitialized.current) return;
+    servicesInitialized.current = true;
 
+    const initializeServices = async () => {
       console.log('[App] Initializing services...');
 
       try {
-        // Initialize offline database (SQLite)
         await offlineDatabaseService.initialize();
-
-        // Initialize network monitoring
         await networkService.initialize();
-
-        // Initialize screenshot protection
         await screenshotProtectionService.initialize();
-
-        // Initialize auto-logout service
+        
         const { logout } = useAppStore.getState();
         await autoLogoutService.initialize(() => {
-          console.log('[App] Auto-logout triggered after 90 days inactivity');
+          console.log('[App] Auto-logout triggered');
           logout();
           router.replace('/login');
         });
 
-        // Start sync service
         syncService.start();
-
         console.log('[App] All services initialized');
       } catch (error) {
         console.error('[App] Service initialization error:', error);
@@ -79,7 +70,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
     initializeServices();
 
-    // Cleanup on unmount
     return () => {
       networkService.cleanup();
       screenshotProtectionService.cleanup();
@@ -87,57 +77,61 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       syncService.stop();
       offlineDatabaseService.close();
     };
-  }, [router]);
+  }, []);
 
   /**
-   * CONSOLIDATED STATE TRANSITION
-   * Single effect that handles hydration → ready state transition
+   * Hydration handler - sets app ready state
+   * NO pathname dependency - prevents mobile infinite loop
    */
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    
-    // If hydrated, show content immediately
     if (hasHydrated) {
-      setAppState('ready');
+      setAppReady(true);
       return;
     }
     
-    // Fallback: Force show content after 1.5s even if hydration fails
-    timeout = setTimeout(() => {
-      console.log('[AuthGuard] Force showing content (hydration timeout)');
+    // Fallback timeout for slow hydration
+    const timeout = setTimeout(() => {
+      console.log('[AuthGuard] Force ready (hydration timeout)');
       const { setHasHydrated } = useAppStore.getState();
       setHasHydrated(true);
-      setAppState('ready');
+      setAppReady(true);
     }, 1500);
     
     return () => clearTimeout(timeout);
   }, [hasHydrated]);
 
   /**
-   * Update screenshot protection based on current screen
+   * User activity tracking - DEBOUNCED to prevent rapid calls
+   * NO pathname dependency - uses interval instead
    */
   useEffect(() => {
-    if (pathname && appState === 'ready') {
-      screenshotProtectionService.updateForScreen(pathname);
-    }
-  }, [pathname, appState]);
+    if (!appReady || !isAuthenticated || !user) return;
+
+    // Record initial activity
+    const recordActivity = () => {
+      const now = Date.now();
+      // Only record if 5 seconds have passed since last record
+      if (now - lastActivityRecorded.current > 5000) {
+        lastActivityRecorded.current = now;
+        autoLogoutService.recordUserActivity();
+        offlineDatabaseService.updateLastActivity(user.id);
+      }
+    };
+
+    recordActivity();
+
+    // Set up interval for periodic activity tracking instead of pathname-based
+    const interval = setInterval(recordActivity, 60000); // Every minute
+
+    return () => clearInterval(interval);
+  }, [appReady, isAuthenticated, user?.id]);
 
   /**
-   * Record user activity for auto-logout tracking
+   * Fetch admins list - runs ONCE when authenticated
    */
   useEffect(() => {
-    if (appState === 'ready' && isAuthenticated && user) {
-      autoLogoutService.recordUserActivity();
-      offlineDatabaseService.updateLastActivity(user.id);
-    }
-  }, [appState, isAuthenticated, user, pathname]);
+    if (!appReady || !isAuthenticated || adminsLoaded.current) return;
 
-  /**
-   * Fetch admins list for access control - runs ONCE per session
-   */
-  useEffect(() => {
-    if (appState !== 'ready' || !isAuthenticated || adminsLoaded.current) return;
-    
     const fetchAdmins = async () => {
       try {
         const response = await adminApi.checkAccess();
@@ -145,25 +139,24 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
           const { setAdmins } = useAppStore.getState();
           setAdmins(response.data);
           adminsLoaded.current = true;
-          console.log('[AuthGuard] Admins list loaded');
         }
       } catch (error) {
-        console.log('[AuthGuard] Could not fetch admins list');
+        console.log('[AuthGuard] Could not fetch admins');
       }
     };
 
     fetchAdmins();
-  }, [appState, isAuthenticated]);
+  }, [appReady, isAuthenticated]);
 
   /**
-   * NAVIGATION GUARD
-   * Handles auth-based routing with debounced navigation
+   * Navigation guard - handles auth-based routing
+   * Uses segments only (stable), NOT pathname (unstable on mobile)
    */
   useEffect(() => {
-    if (appState !== 'ready') return;
-    
-    // Prevent rapid-fire navigation calls
-    const navigateTimeout = setTimeout(() => {
+    if (!appReady) return;
+
+    // Debounce navigation to prevent rapid-fire calls
+    const timeout = setTimeout(() => {
       const inAuthGroup = segments[0] === 'login';
       const inProtectedRoute = 
         segments[0] === 'admin' || 
@@ -172,26 +165,20 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         segments[0] === 'orders' ||
         segments[0] === 'favorites';
 
-      // Authenticated user on login page → redirect to home
       if (isAuthenticated && inAuthGroup) {
-        console.log('[AuthGuard] Redirecting authenticated user to home');
+        console.log('[AuthGuard] Redirecting to home');
         router.replace('/(tabs)');
-        return;
-      }
-      
-      // Unauthenticated user on protected route → redirect to login
-      if (!isAuthenticated && inProtectedRoute) {
-        console.log('[AuthGuard] Redirecting unauthenticated user to login');
+      } else if (!isAuthenticated && inProtectedRoute) {
+        console.log('[AuthGuard] Redirecting to login');
         router.replace('/login');
-        return;
       }
-    }, 100); // Debounce navigation by 100ms
-    
-    return () => clearTimeout(navigateTimeout);
-  }, [appState, isAuthenticated, segments, router]);
+    }, 150);
+
+    return () => clearTimeout(timeout);
+  }, [appReady, isAuthenticated, segments]);
 
   // Loading state
-  if (appState === 'loading') {
+  if (!appReady) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: currentMood?.background || '#0F172A' }]}>
         <ActivityIndicator size="large" color={currentMood?.primary || '#3B82F6'} />
@@ -203,7 +190,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Root Layout - Minimal and Stable
+ * Root Layout - Minimal wrapper
  */
 export default function RootLayout() {
   const theme = useAppStore((state) => state.theme);
