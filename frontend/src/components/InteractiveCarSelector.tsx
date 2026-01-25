@@ -1134,10 +1134,10 @@ export const InteractiveCarSelector: React.FC = () => {
             ) : (
               <FlashList
                 data={chassisFilteredModels}
-                numColumns={3}
+                numColumns={2}
                 keyExtractor={keyExtractor}
                 renderItem={renderChassisItem}
-                estimatedItemSize={280}
+                estimatedItemSize={220}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.chassisGridContent}
               />
