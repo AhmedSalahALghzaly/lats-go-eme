@@ -567,8 +567,8 @@ export const InteractiveCarSelector: React.FC = () => {
   // EXPAND/COLLAPSE ANIMATIONS
   // ============================================================================
   useEffect(() => {
-    const expandedHeight = Math.round(SCREEN_HEIGHT * 0.35);
-    const chassisExpandedHeight = Math.round(SCREEN_HEIGHT * 0.40);
+    const expandedHeight = Math.round(SCREEN_HEIGHT * 0.30);
+    const chassisExpandedHeight = Math.round(SCREEN_HEIGHT * 0.35);
     
     switch (selectorState) {
       case 'collapsed':
