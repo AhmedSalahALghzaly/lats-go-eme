@@ -413,31 +413,69 @@ export default function OwnerDashboard() {
 
           {/* Search & Partners Icons */}
           <View style={styles.headerActionsContainer}>
+            {/* Home Navigation Icon */}
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() => {
+                haptic.tap();
+                router.push('/');
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={styles.headerActionIconBg}>
+                <Ionicons name="home" size={20} color="#FFF" />
+              </View>
+              <Text style={styles.headerActionText}>
+                {language === 'ar' ? 'الرئيسية' : 'Home'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Admin Panel Navigation Icon */}
+            <TouchableOpacity
+              style={styles.headerActionButton}
+              onPress={() => {
+                haptic.tap();
+                router.push('/admin');
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.headerActionIconBg, { backgroundColor: 'rgba(139, 92, 246, 0.3)' }]}>
+                <Ionicons name="settings" size={20} color="#A78BFA" />
+              </View>
+              <Text style={styles.headerActionText}>
+                {language === 'ar' ? 'الإدارة' : 'Admin'}
+              </Text>
+            </TouchableOpacity>
+
             {/* Global Search Icon */}
             <TouchableOpacity
-              style={styles.searchButton}
+              style={styles.headerActionButton}
               onPress={() => {
                 haptic.tap();
                 setShowGlobalSearch(true);
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="search" size={24} color="rgba(255,255,255,0.9)" />
-              <Text style={styles.partnersButtonText}>
+              <View style={[styles.headerActionIconBg, { backgroundColor: 'rgba(59, 130, 246, 0.3)' }]}>
+                <Ionicons name="search" size={20} color="#60A5FA" />
+              </View>
+              <Text style={styles.headerActionText}>
                 {language === 'ar' ? 'بحث' : 'Search'}
               </Text>
             </TouchableOpacity>
 
             {/* Partners Icon */}
             <TouchableOpacity
-              style={styles.partnersButton}
+              style={styles.headerActionButton}
               onPress={handlePartnersTap}
               onPressIn={handlePartnersLongPressStart}
               onPressOut={handlePartnersLongPressEnd}
               activeOpacity={0.7}
             >
-              <Ionicons name="people-circle-outline" size={28} color="rgba(255,255,255,0.9)" />
-              <Text style={styles.partnersButtonText}>
+              <View style={[styles.headerActionIconBg, { backgroundColor: 'rgba(16, 185, 129, 0.3)' }]}>
+                <Ionicons name="people" size={20} color="#34D399" />
+              </View>
+              <Text style={styles.headerActionText}>
                 {language === 'ar' ? 'الشركاء' : 'Partners'}
               </Text>
             </TouchableOpacity>
