@@ -20,6 +20,7 @@ class CarModelCreate(BaseModel):
     year_start: Optional[int] = None
     year_end: Optional[int] = None
     image_url: Optional[str] = None
+    images: List[str] = []  # Multiple images support
     description: Optional[str] = None
     description_ar: Optional[str] = None
     variants: List[dict] = []
