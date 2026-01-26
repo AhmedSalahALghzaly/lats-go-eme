@@ -17,6 +17,7 @@ import {
   Dimensions,
   TextInput,
   Platform,
+  Alert,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
@@ -39,6 +40,8 @@ import Animated, {
 import { useAppStore } from '../store/appStore';
 import { productApi } from '../services/api';
 import { ProductCardSkeleton } from './ui/Skeleton';
+import { AnimatedCartButton, AnimatedCartButtonRef } from './AnimatedIconButton';
+import { useCartMutations } from '../hooks/queries/useShoppingHubQuery';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
