@@ -1704,6 +1704,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
+    position: 'relative',
   },
   productImage: {
     width: '100%',
@@ -1724,6 +1725,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 15,
   },
+  priceCartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   priceTag: {
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
@@ -1734,6 +1740,11 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  cartButtonOverlay: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
   loadingContainer: {
     flex: 1,
