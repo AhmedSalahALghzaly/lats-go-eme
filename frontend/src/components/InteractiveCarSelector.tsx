@@ -1544,11 +1544,11 @@ const styles = StyleSheet.create({
   },
   productCountBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 3,
-    paddingVertical: 1.5,
+    paddingHorizontal: 3.9,
+    paddingVertical: 1.3,
     borderRadius: 8,
     marginTop: 4,
-    opacity: 0.1999,
+    opacity: 0.7593,
   },
   headerSubtitle: {
     fontSize: 12,
@@ -1626,7 +1626,7 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 13,
-    fontWeight: '550',
+    fontWeight: '500',
     lineHeight: 15,
   },
   priceTag: {
@@ -1634,7 +1634,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    opacity: 0.1999,
+    opacity: 0.7953,
   },
   priceText: {
     fontSize: 13,
