@@ -948,7 +948,28 @@ const styles = StyleSheet.create({
   headerActionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+  },
+  headerActionButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50,
+  },
+  headerActionIconBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  headerActionText: {
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 3,
+    fontWeight: '500',
   },
   searchButton: {
     alignItems: 'center',
