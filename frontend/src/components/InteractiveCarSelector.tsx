@@ -1634,7 +1634,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    opacity: 0.9750,
+    opacity: 1.3075,
   },
   priceText: {
     fontSize: 13,
