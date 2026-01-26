@@ -608,7 +608,7 @@ export default function OwnerDashboard() {
               style={styles.footerNavItem}
               onPress={() => {
                 haptic.tap();
-                router.push('/owner/advanced-search' as any);
+                setShowAdvancedSearch(true);
               }}
               activeOpacity={0.7}
             >
