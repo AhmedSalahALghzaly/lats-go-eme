@@ -435,9 +435,25 @@ const ProductCard = memo<ProductCardProps>(({
         style={[
           styles.productCard,
           { 
-            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)', 
-            borderColor: (moodPrimary || '#009688') + '30',
-            opacity: isDark ? 1.3795 : 1,
+            // Glassmorphism Background - 30% more solid in Dark Mode
+            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.91)' : 'rgba(255, 255, 255, 0.85)', 
+            // Enhanced Border for Dark Mode clarity
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : (moodPrimary || '#009688') + '30',
+            borderWidth: 1,
+            // Enhanced Shadow for Premium Depth
+            ...(Platform.OS === 'web' ? {
+              boxShadow: isDark 
+                ? '0px 8px 32px rgba(0, 0, 0, 0.4), inset 0px 1px 0px rgba(255, 255, 255, 0.05)'
+                : '0px 4px 16px rgba(0, 0, 0, 0.1)',
+              backdropFilter: 'blur(15px)',
+              WebkitBackdropFilter: 'blur(15px)',
+            } : {
+              shadowColor: isDark ? '#000000' : '#000000',
+              shadowOffset: { width: 0, height: isDark ? 8 : 4 },
+              shadowOpacity: isDark ? 0.25 : 0.1,
+              shadowRadius: isDark ? 15 : 8,
+              elevation: isDark ? 12 : 6,
+            }),
           },
         ]}
         onPressIn={handlePressIn}
