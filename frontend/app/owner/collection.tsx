@@ -1,6 +1,7 @@
 /**
  * Collection Screen - Product Inventory Management with Categories
  * View all products grouped by category with stock management
+ * ENHANCED: Professional Dark/Light Mode Support
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -13,14 +14,14 @@ import {
   RefreshControl,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../../src/store/appStore';
+import { useTheme } from '../../src/hooks/useTheme';
 import { productsApi, categoriesApi, productBrandsApi } from '../../src/services/api';
 
 type ViewMode = 'grid' | 'list';
@@ -29,6 +30,7 @@ type GroupBy = 'category' | 'brand' | 'stock';
 export default function CollectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const language = useAppStore((state) => state.language);
   const products = useAppStore((state) => state.products);
   const setProducts = useAppStore((state) => state.setProducts);
@@ -42,6 +44,23 @@ export default function CollectionScreen() {
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Dynamic colors based on theme
+  const themeColors = useMemo(() => ({
+    background: isDark ? colors.background : '#F8FAFC',
+    surface: isDark ? colors.surface : '#FFFFFF',
+    card: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+    cardBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+    text: colors.text,
+    textSecondary: colors.textSecondary,
+    primary: colors.primary,
+    accent: isDark ? '#60A5FA' : '#3B82F6',
+    searchBg: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    pillBg: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+    pillActiveBg: isDark ? colors.primary : colors.primary,
+    groupHeaderBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
+    badgeBg: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)',
+  }), [isDark, colors]);
 
   useEffect(() => {
     fetchData();
@@ -99,7 +118,7 @@ export default function CollectionScreen() {
           name: cat.name,
           nameAr: cat.name_ar,
           products: [],
-          color: '#3B82F6',
+          color: themeColors.accent,
         };
       });
       groups['uncategorized'] = { name: 'Uncategorized', nameAr: 'بدون فئة', products: [], color: '#6B7280' };
@@ -152,10 +171,12 @@ export default function CollectionScreen() {
     return Object.entries(groups)
       .filter(([_, group]) => group.products.length > 0)
       .map(([id, group]) => ({ id, ...group }));
-  }, [products, categories, brands, searchQuery, groupBy]);
+  }, [products, categories, brands, searchQuery, groupBy, themeColors.accent]);
 
   const toggleGroup = (groupId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(groupId)) {
       newExpanded.delete(groupId);
@@ -184,31 +205,35 @@ export default function CollectionScreen() {
       return (
         <TouchableOpacity
           key={product.id}
-          style={styles.listItem}
+          style={[
+            styles.listItem,
+            {
+              backgroundColor: themeColors.card,
+              borderColor: themeColors.cardBorder,
+            },
+          ]}
           onPress={() => router.push(`/product/${product.id}`)}
           activeOpacity={0.7}
         >
-          <BlurView intensity={10} tint="light" style={styles.listItemBlur}>
-            {product.images?.[0] || product.image_url ? (
-              <Image source={{ uri: product.images?.[0] || product.image_url }} style={styles.listItemImage} />
-            ) : (
-              <View style={[styles.listItemImage, styles.placeholderImage]}>
-                <Ionicons name="cube" size={20} color="rgba(255,255,255,0.5)" />
-              </View>
-            )}
-            <View style={styles.listItemInfo}>
-              <Text style={styles.listItemName} numberOfLines={1}>
-                {isRTL ? product.name_ar : product.name}
-              </Text>
-              <Text style={styles.listItemSku}>SKU: {product.sku}</Text>
+          {product.images?.[0] || product.image_url ? (
+            <Image source={{ uri: product.images?.[0] || product.image_url }} style={styles.listItemImage} />
+          ) : (
+            <View style={[styles.listItemImage, styles.placeholderImage, { backgroundColor: themeColors.cardBorder }]}>
+              <Ionicons name="cube" size={20} color={themeColors.textSecondary} />
             </View>
-            <View style={styles.listItemMeta}>
-              <Text style={styles.listItemPrice}>{product.price?.toLocaleString()} ج.م</Text>
-              <View style={[styles.stockBadge, { backgroundColor: stockColor + '30' }]}>
-                <Text style={[styles.stockBadgeText, { color: stockColor }]}>{stock}</Text>
-              </View>
+          )}
+          <View style={styles.listItemInfo}>
+            <Text style={[styles.listItemName, { color: themeColors.text }]} numberOfLines={1}>
+              {isRTL ? product.name_ar : product.name}
+            </Text>
+            <Text style={[styles.listItemSku, { color: themeColors.textSecondary }]}>SKU: {product.sku}</Text>
+          </View>
+          <View style={styles.listItemMeta}>
+            <Text style={[styles.listItemPrice, { color: themeColors.primary }]}>{product.price?.toLocaleString()} ج.م</Text>
+            <View style={[styles.stockBadge, { backgroundColor: stockColor + '20' }]}>
+              <Text style={[styles.stockBadgeText, { color: stockColor }]}>{stock}</Text>
             </View>
-          </BlurView>
+          </View>
         </TouchableOpacity>
       );
     }
@@ -217,94 +242,116 @@ export default function CollectionScreen() {
     return (
       <TouchableOpacity
         key={product.id}
-        style={styles.gridItem}
+        style={[
+          styles.gridItem,
+          {
+            backgroundColor: themeColors.card,
+            borderColor: themeColors.cardBorder,
+          },
+        ]}
         onPress={() => router.push(`/product/${product.id}`)}
         activeOpacity={0.7}
       >
-        <BlurView intensity={10} tint="light" style={styles.gridItemBlur}>
-          {product.images?.[0] || product.image_url ? (
-            <Image source={{ uri: product.images?.[0] || product.image_url }} style={styles.gridItemImage} />
-          ) : (
-            <View style={[styles.gridItemImage, styles.placeholderImage]}>
-              <Ionicons name="cube" size={30} color="rgba(255,255,255,0.5)" />
-            </View>
-          )}
-          <View style={[styles.gridStockBadge, { backgroundColor: stockColor }]}>
-            <Text style={styles.gridStockText}>{stock}</Text>
+        {product.images?.[0] || product.image_url ? (
+          <Image source={{ uri: product.images?.[0] || product.image_url }} style={styles.gridItemImage} />
+        ) : (
+          <View style={[styles.gridItemImage, styles.placeholderImage, { backgroundColor: themeColors.cardBorder }]}>
+            <Ionicons name="cube" size={30} color={themeColors.textSecondary} />
           </View>
-          <Text style={styles.gridItemName} numberOfLines={2}>
-            {isRTL ? product.name_ar : product.name}
-          </Text>
-          <Text style={styles.gridItemPrice}>{product.price?.toLocaleString()} ج.م</Text>
-        </BlurView>
+        )}
+        <View style={[styles.gridStockBadge, { backgroundColor: stockColor }]}>
+          <Text style={styles.gridStockText}>{stock}</Text>
+        </View>
+        <Text style={[styles.gridItemName, { color: themeColors.text }]} numberOfLines={2}>
+          {isRTL ? product.name_ar : product.name}
+        </Text>
+        <Text style={[styles.gridItemPrice, { color: themeColors.primary }]}>{product.price?.toLocaleString()} ج.م</Text>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#92400E', '#B45309', '#D97706']} style={StyleSheet.absoluteFill} />
-
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFF" />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={themeColors.primary}
+            colors={[themeColors.primary]}
+          />
+        }
       >
         {/* Header */}
         <View style={[styles.header, isRTL && styles.headerRTL]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#FFF" />
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}
+            onPress={() => router.back()}
+          >
+            <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={themeColors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isRTL ? 'المجموعة' : 'Collection'}</Text>
+          <Text style={[styles.headerTitle, { color: themeColors.text }]}>
+            {isRTL ? 'المجموعة' : 'Collection'}
+          </Text>
           <View style={styles.headerActions}>
             <TouchableOpacity
-              style={[styles.viewToggle, viewMode === 'grid' && styles.viewToggleActive]}
+              style={[
+                styles.viewToggle,
+                { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+                viewMode === 'grid' && { backgroundColor: themeColors.primary },
+              ]}
               onPress={() => setViewMode('grid')}
             >
-              <Ionicons name="grid" size={18} color={viewMode === 'grid' ? '#FFF' : 'rgba(255,255,255,0.5)'} />
+              <Ionicons name="grid" size={18} color={viewMode === 'grid' ? '#FFF' : themeColors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.viewToggle, viewMode === 'list' && styles.viewToggleActive]}
+              style={[
+                styles.viewToggle,
+                { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+                viewMode === 'list' && { backgroundColor: themeColors.primary },
+              ]}
               onPress={() => setViewMode('list')}
             >
-              <Ionicons name="list" size={18} color={viewMode === 'list' ? '#FFF' : 'rgba(255,255,255,0.5)'} />
+              <Ionicons name="list" size={18} color={viewMode === 'list' ? '#FFF' : themeColors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Stats Cards */}
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.total}</Text>
-            <Text style={styles.statLabel}>{isRTL ? 'المنتجات' : 'Products'}</Text>
+          <View style={[styles.statCard, { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
+            <Text style={[styles.statValue, { color: themeColors.primary }]}>{stats.total}</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{isRTL ? 'المنتجات' : 'Products'}</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
             <Text style={[styles.statValue, { color: '#EF4444' }]}>{stats.outOfStock}</Text>
-            <Text style={styles.statLabel}>{isRTL ? 'نفد' : 'Out'}</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{isRTL ? 'نفد' : 'Out'}</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
             <Text style={[styles.statValue, { color: '#F59E0B' }]}>{stats.lowStock}</Text>
-            <Text style={styles.statLabel}>{isRTL ? 'منخفض' : 'Low'}</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{isRTL ? 'منخفض' : 'Low'}</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
             <Text style={[styles.statValue, { color: '#10B981' }]}>{(stats.totalValue / 1000).toFixed(0)}K</Text>
-            <Text style={styles.statLabel}>{isRTL ? 'القيمة' : 'Value'}</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{isRTL ? 'القيمة' : 'Value'}</Text>
           </View>
         </View>
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="rgba(255,255,255,0.5)" />
+        <View style={[styles.searchContainer, { backgroundColor: themeColors.searchBg, borderColor: themeColors.cardBorder }]}>
+          <Ionicons name="search" size={20} color={themeColors.textSecondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: themeColors.text }]}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder={isRTL ? 'ابحث في المنتجات...' : 'Search products...'}
-            placeholderTextColor="rgba(255,255,255,0.4)"
+            placeholderTextColor={themeColors.textSecondary}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.5)" />
+              <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -318,13 +365,25 @@ export default function CollectionScreen() {
           ].map((option) => (
             <TouchableOpacity
               key={option.id}
-              style={[styles.groupByPill, groupBy === option.id && styles.groupByPillActive]}
+              style={[
+                styles.groupByPill,
+                { backgroundColor: themeColors.pillBg, borderColor: themeColors.cardBorder },
+                groupBy === option.id && { backgroundColor: themeColors.pillActiveBg, borderColor: themeColors.primary },
+              ]}
               onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
                 setGroupBy(option.id as GroupBy);
               }}
             >
-              <Text style={[styles.groupByText, groupBy === option.id && styles.groupByTextActive]}>
+              <Text
+                style={[
+                  styles.groupByText,
+                  { color: themeColors.textSecondary },
+                  groupBy === option.id && { color: '#FFF' },
+                ]}
+              >
                 {isRTL ? option.labelAr : option.label}
               </Text>
             </TouchableOpacity>
@@ -334,12 +393,12 @@ export default function CollectionScreen() {
         {/* Grouped Products */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FFF" />
+            <ActivityIndicator size="large" color={themeColors.primary} />
           </View>
         ) : groupedProducts.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="cube-outline" size={64} color="rgba(255,255,255,0.5)" />
-            <Text style={styles.emptyText}>
+            <Ionicons name="cube-outline" size={64} color={themeColors.textSecondary} />
+            <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
               {searchQuery ? (isRTL ? 'لا توجد نتائج' : 'No results found') : (isRTL ? 'لا توجد منتجات' : 'No products yet')}
             </Text>
           </View>
@@ -347,21 +406,21 @@ export default function CollectionScreen() {
           groupedProducts.map((group) => (
             <View key={group.id} style={styles.groupContainer}>
               <TouchableOpacity
-                style={styles.groupHeader}
+                style={[styles.groupHeader, { backgroundColor: themeColors.groupHeaderBg, borderColor: themeColors.cardBorder }]}
                 onPress={() => toggleGroup(group.id)}
                 activeOpacity={0.7}
               >
                 <View style={[styles.groupColorBar, { backgroundColor: group.color }]} />
-                <Text style={styles.groupName}>
+                <Text style={[styles.groupName, { color: themeColors.text }]}>
                   {isRTL ? group.nameAr : group.name}
                 </Text>
-                <View style={styles.groupBadge}>
-                  <Text style={styles.groupBadgeText}>{group.products.length}</Text>
+                <View style={[styles.groupBadge, { backgroundColor: themeColors.badgeBg }]}>
+                  <Text style={[styles.groupBadgeText, { color: themeColors.text }]}>{group.products.length}</Text>
                 </View>
                 <Ionicons
                   name={expandedGroups.has(group.id) ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color="rgba(255,255,255,0.7)"
+                  color={themeColors.textSecondary}
                 />
               </TouchableOpacity>
 
@@ -386,49 +445,99 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 16 },
   header: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, gap: 12 },
   headerRTL: { flexDirection: 'row-reverse' },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 24, fontWeight: '700', color: '#FFF' },
-  headerActions: { flexDirection: 'row', gap: 4 },
-  viewToggle: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' },
-  viewToggleActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
-  statsRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  statCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 12, alignItems: 'center' },
-  statValue: { fontSize: 20, fontWeight: '700', color: '#FFF' },
-  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginTop: 16, gap: 10 },
-  searchInput: { flex: 1, fontSize: 15, color: '#FFF' },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  headerTitle: { flex: 1, fontSize: 24, fontWeight: '700' },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  viewToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  statsRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  statCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  statValue: { fontSize: 22, fontWeight: '700' },
+  statLabel: { fontSize: 11, marginTop: 4, fontWeight: '500' },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 16,
+    gap: 10,
+    borderWidth: 1,
+  },
+  searchInput: { flex: 1, fontSize: 15 },
   groupByContainer: { marginTop: 16, marginBottom: 8 },
-  groupByPill: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8 },
-  groupByPillActive: { backgroundColor: 'rgba(255,255,255,0.3)' },
-  groupByText: { fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
-  groupByTextActive: { color: '#FFF' },
+  groupByPill: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 24,
+    marginRight: 10,
+    borderWidth: 1,
+  },
+  groupByText: { fontSize: 13, fontWeight: '600' },
   loadingContainer: { paddingVertical: 60, alignItems: 'center' },
   emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: 'rgba(255,255,255,0.5)', fontSize: 16, marginTop: 16 },
+  emptyText: { fontSize: 16, marginTop: 16 },
   groupContainer: { marginTop: 16 },
-  groupHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14, gap: 10 },
-  groupColorBar: { width: 4, height: 24, borderRadius: 2 },
-  groupName: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FFF' },
-  groupBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
-  groupBadgeText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12, paddingHorizontal: 4 },
-  listContainer: { marginTop: 12, gap: 8 },
-  gridItem: { width: '47%', borderRadius: 12, overflow: 'hidden' },
-  gridItemBlur: { padding: 10, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
-  gridItemImage: { width: '100%', aspectRatio: 1, borderRadius: 8, marginBottom: 8 },
-  gridStockBadge: { position: 'absolute', top: 14, right: 14, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 14,
+    gap: 12,
+    borderWidth: 1,
+  },
+  groupColorBar: { width: 4, height: 28, borderRadius: 2 },
+  groupName: { flex: 1, fontSize: 16, fontWeight: '600' },
+  groupBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  groupBadgeText: { fontSize: 13, fontWeight: '700' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 },
+  listContainer: { marginTop: 12, gap: 10 },
+  gridItem: {
+    width: '47%',
+    borderRadius: 16,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  gridItemImage: { width: '100%', aspectRatio: 1, borderRadius: 12, marginBottom: 10 },
+  gridStockBadge: { position: 'absolute', top: 16, right: 16, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   gridStockText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
-  gridItemName: { fontSize: 13, fontWeight: '600', color: '#FFF', textAlign: 'center', marginBottom: 4 },
-  gridItemPrice: { fontSize: 14, fontWeight: '700', color: '#F59E0B' },
-  listItem: { borderRadius: 12, overflow: 'hidden' },
-  listItemBlur: { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', gap: 12 },
-  listItemImage: { width: 50, height: 50, borderRadius: 8 },
-  placeholderImage: { backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  gridItemName: { fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 6 },
+  gridItemPrice: { fontSize: 15, fontWeight: '700' },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
+    borderWidth: 1,
+  },
+  listItemImage: { width: 56, height: 56, borderRadius: 10 },
+  placeholderImage: { alignItems: 'center', justifyContent: 'center' },
   listItemInfo: { flex: 1 },
-  listItemName: { fontSize: 14, fontWeight: '600', color: '#FFF' },
-  listItemSku: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+  listItemName: { fontSize: 14, fontWeight: '600' },
+  listItemSku: { fontSize: 11, marginTop: 3 },
   listItemMeta: { alignItems: 'flex-end' },
-  listItemPrice: { fontSize: 14, fontWeight: '700', color: '#F59E0B' },
-  stockBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginTop: 4 },
+  listItemPrice: { fontSize: 15, fontWeight: '700' },
+  stockBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, marginTop: 6 },
   stockBadgeText: { fontSize: 12, fontWeight: '700' },
 });
