@@ -436,7 +436,7 @@ const ProductCard = memo<ProductCardProps>(({
           styles.productCard,
           { 
             // Glassmorphism Background - 30% more solid in Dark Mode
-            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.91)' : 'rgba(255, 255, 255, 0.85)', 
+            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.75)' : 'rgba(255, 255, 255, 0.70)', 
             // Enhanced Border for Dark Mode clarity
             borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : (moodPrimary || '#009688') + '30',
             borderWidth: 1,
