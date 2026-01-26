@@ -966,8 +966,9 @@ export const InteractiveCarSelector: React.FC = () => {
       colorsTextSecondary={colors.textSecondary}
       language={language}
       onPress={handleProductPress}
+      onAddToCart={handleProductAddToCart}
     />
-  ), [isDark, moodPrimary, colors.text, colors.primary, colors.textSecondary, language, handleProductPress]);
+  ), [isDark, moodPrimary, colors.text, colors.primary, colors.textSecondary, language, handleProductPress, handleProductAddToCart]);
 
   const renderFilterItem = useCallback(({ item }: { item: PriceFilter }) => (
     <FilterChip
