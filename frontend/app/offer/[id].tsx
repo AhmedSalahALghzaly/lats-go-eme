@@ -75,7 +75,29 @@ export default function OfferDetailsScreen() {
 
   // Cart mutations with bidirectional duplicate prevention
   const queryClient = useQueryClient();
-  const { checkDuplicate, checkBundleDuplicate } = useCartMutations();
+  const { checkDuplicate: checkDuplicateFromHook, checkBundleDuplicate } = useCartMutations();
+  
+  // Fetch cart data to ensure real-time duplicate checking
+  const { data: cartItems = [] } = useCartQuery(true);
+  
+  // Enhanced duplicate check that uses fresh cart data
+  const checkDuplicate = useCallback((productId: string): boolean => {
+    // First check using the hook's checkDuplicate
+    if (checkDuplicateFromHook(productId)) {
+      return true;
+    }
+    
+    // Fallback: Also check directly from cartItems
+    if (cartItems && cartItems.length > 0) {
+      return cartItems.some((item: any) => 
+        item.product_id === productId || 
+        item.productId === productId ||
+        item.id === productId
+      );
+    }
+    
+    return false;
+  }, [checkDuplicateFromHook, cartItems]);
 
   // Bundle offer data from API
   const [offer, setOffer] = useState<BundleOffer | null>(null);
