@@ -356,36 +356,40 @@ export default function SearchScreen() {
               {t('filterByCategory')}
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[
-                    styles.imageFilterCardSmall,
-                    { borderColor: colors.border, backgroundColor: colors.surface },
-                    selectedCategory === cat.id && { borderColor: colors.primary, borderWidth: 2 },
-                  ]}
-                  onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                >
-                  <Text style={[
-                    styles.imageFilterLabelSmall,
-                    { color: selectedCategory === cat.id ? colors.primary : colors.text },
-                  ]} numberOfLines={1}>
-                    {getName(cat)}
-                  </Text>
-                  <View style={[styles.imageFilterImageContainerSmall, { backgroundColor: colors.background }]}>
-                    {cat.image ? (
-                      <Image
-                        source={{ uri: cat.image }}
-                        style={styles.categoryImage}
-                        contentFit="contain"
-                        transition={200}
-                      />
-                    ) : (
-                      <Ionicons name="grid" size={30} color={colors.textSecondary} />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {categories.map((cat) => {
+                // Categories use 'image_data' field for images (base64 format from admin panel)
+                const categoryImage = cat.image_data;
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.imageFilterCardSmall,
+                      { borderColor: colors.border, backgroundColor: colors.surface },
+                      selectedCategory === cat.id && { borderColor: colors.primary, borderWidth: 2 },
+                    ]}
+                    onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+                  >
+                    <View style={[styles.imageFilterImageContainerSmall, { backgroundColor: colors.background }]}>
+                      {categoryImage ? (
+                        <Image
+                          source={{ uri: categoryImage }}
+                          style={styles.categoryImage}
+                          contentFit="contain"
+                          transition={200}
+                        />
+                      ) : (
+                        <Ionicons name="grid" size={30} color={colors.textSecondary} />
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.imageFilterLabelSmall,
+                      { color: selectedCategory === cat.id ? colors.primary : colors.text },
+                    ]} numberOfLines={1}>
+                      {getName(cat)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
 
