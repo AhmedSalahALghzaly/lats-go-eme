@@ -431,6 +431,30 @@ export const AdvancedSearchBottomSheet: React.FC<AdvancedSearchBottomSheetProps>
                       {language === 'ar' ? 'المفضلة' : 'Favorites'}
                     </Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.quickAction, { backgroundColor: '#06B6D4' + '15' }]}
+                    onPress={() => {
+                      onClose();
+                      router.push('/search');
+                    }}
+                  >
+                    <Ionicons name="cube" size={24} color="#06B6D4" />
+                    <Text style={[styles.quickActionText, { color: '#06B6D4' }]}>
+                      {language === 'ar' ? 'المنتجات' : 'Products'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.quickAction, { backgroundColor: '#8B5CF6' + '15' }]}
+                    onPress={() => {
+                      onClose();
+                      router.push('/car-brands');
+                    }}
+                  >
+                    <MaterialCommunityIcons name="car-multiple" size={24} color="#8B5CF6" />
+                    <Text style={[styles.quickActionText, { color: '#8B5CF6' }]}>
+                      {language === 'ar' ? 'ماركات السيارات' : 'Car Brands'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </Animated.View>
             )}
